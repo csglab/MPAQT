@@ -1,0 +1,10 @@
+
+library(dplyr)
+library(Biostrings)
+library(stringr)
+library(tidyr)
+library(Matrix)
+library("matrixStats")
+if (!requireNamespace("sparseMatrixStats", quietly = TRUE))
+    BiocManager::install("sparseMatrixStats")
+library(sparseMatrixStats)
