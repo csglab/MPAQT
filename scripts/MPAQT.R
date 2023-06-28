@@ -5,10 +5,14 @@ args = commandArgs(trailingOnly=TRUE)
 topdir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 topdir <- paste0(topdir, "/")
 
-#P <- readRDS(paste0(topdir, "p_list.Rds"))
-P <- readRDS("/project/6007998/maposto/scripts/p_matrix_auto/reference/p_list.pmat_single.2.4_billion.Oct-15-2021.Rds")
-#n <- readRDS(paste0(topdir, "p_rowSums.Rds"))
-n <- readRDS("/project/6007998/maposto/scripts/p_matrix_auto/reference/p_rowSums.pmat_single.2.4_billion.Oct-15-2021.Rds")
+P <- strsplit(grep('--p_list*', args, value = TRUE), split = '=')[[1]][[2]]
+P <- readRDS(P)
+
+n <- strsplit(grep('--p_rowSums*', args, value = TRUE), split = '=')[[1]][[2]]
+n <- readRDS(n)
+
+#P <- readRDS("/project/6007998/maposto/scripts/p_matrix_auto/reference/p_list.pmat_single.2.4_billion.Oct-15-2021.Rds")
+#n <- readRDS("/project/6007998/maposto/scripts/p_matrix_auto/reference/p_rowSums.pmat_single.2.4_billion.Oct-15-2021.Rds")
 
 
 #### Function for fitting transcript abundances
