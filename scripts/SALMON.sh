@@ -26,10 +26,10 @@ module load gcc/7.3.0
 module load openmpi/3.1.4
 module load salmon/1.3.0
 
-FAIDX=/project/6007998/maposto/reference/salmon/salmon_genomeIndex
+#SALMON_IDX=/project/6007998/maposto/reference/salmon/salmon_genomeIndex
 
 salmon quant -p 8 \
-                         -i ${FAIDX} \
+                         -i ${SALMON_IDX} \
                          -l A \
                          --validateMappings \
                          --gcBias \

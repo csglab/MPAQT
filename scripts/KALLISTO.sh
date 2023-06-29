@@ -17,9 +17,9 @@ echo "STARTING: " $(date)
 mkdir $OUTPUT_DIR
 cd $OUTPUT_DIR
 
-TRANSCRIPTOME=/project/6007998/maposto/reference/kallisto/gencode.v38.transcripts.fa.idx
+#KALLISTO_IDX=/project/6007998/maposto/reference/kallisto/gencode.v38.transcripts.fa.idx
+#env=/project/6007998/maposto/MODULES/kallisto/build/usr/local/bin
 
 # KALLISTO
-bin=/project/6007998/maposto/MODULES/kallisto/build/usr/local/bin
-$bin/kallisto quant -i $TRANSCRIPTOME -o $OUTPUT_DIR $FASTQ1 $FASTQ2 > ${OUTPUT_DIR}/kallisto_quant.log
+$env/kallisto quant -i $KALLISTO_IDX -o $OUTPUT_DIR $FASTQ1 $FASTQ2 > ${OUTPUT_DIR}/kallisto_quant.log
 mv $OUTPUT_DIR/abundance.tsv $OUTPUT_DIR/abundance_transcripts.tsv
