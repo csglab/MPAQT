@@ -21,6 +21,8 @@ cd $OUTPUT_DIR
 
 # Kallisto indexed transcriptome. The transcriptome fasta must be in the same directory
 #KALLISTO_IDX=/path/to/kallisto/index/gencode.v38.transcripts.fa.idx
+#scripts=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/scripts
+#env=~/projects/rrg-hsn/maposto/miniconda3/envs/r4/bin
 
 # MPAQT: KALLISTO BUS
 bin=/project/6007998/maposto/MODULES/kallisto/build/usr/local/bin
@@ -32,8 +34,7 @@ $bin/kallisto bus --num --paired  -o $OUTPUT_DIR -i \
 module load bustools
 bustools text -f -o output.bus.txt output.bus
 
-scripts=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/scripts
-env=~/projects/rrg-hsn/maposto/miniconda3/envs/r4/bin
+#cd $env
 #EC counts
 $env/Rscript $scripts/EC_counts_bustools.R --topdir=$OUTPUT_DIR
 
