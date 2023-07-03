@@ -24,17 +24,17 @@ Rscript simReads.R --rep=$SLURM_ARRAY_TASK_ID --topdir=$OUTPUT_DIR --sample=$sam
 
 # Run kallisto bus
 echo Run kallisto bus $SLURM_ARRAY_TASK_ID
-TRANSCRIPTOME=/project/6007998/maposto/reference/kallisto/gencode.v38.transcripts.fa.idx
+#KALLISTO_IDX=/project/6007998/maposto/reference/kallisto/gencode.v38.transcripts.fa.idx
 FASTQ1=$OUTPUT_DIR/$sample\_R1.fastq.gz
 FASTQ2=$OUTPUT_DIR/$sample\_R2.fastq.gz
 echo $FASTQ1 $FASTQ2
 
 if [ $mode == "single" ];then 
   echo single
-  kallisto bus --num -o $OUTPUT_DIR -i  $TRANSCRIPTOME $FASTQ1
+  kallisto bus --num -o $OUTPUT_DIR -i  $KALLISTO_IDX $FASTQ1
 elif [ $mode == "paired" ];then 
   echo paired
-  kallisto bus --num --paired -o $OUTPUT_DIR -i  $TRANSCRIPTOME $FASTQ1 $FASTQ2
+  kallisto bus --num --paired -o $OUTPUT_DIR -i  $KALLISTO_IDX $FASTQ1 $FASTQ2
 fi
 
 # Bustools

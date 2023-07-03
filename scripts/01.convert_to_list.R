@@ -44,6 +44,3 @@ if( sum(x!=y) > 0 ) { stop("Something went wrong.")}
 
 
 saveRDS(P.list,  paste0(topdir, "p_list.Rds"))
-
-## In the next steps, use the following file:
-# P <- readRDS("~/GDrive/Projects/Michael/20210812.model_fit/p_list.Rds")

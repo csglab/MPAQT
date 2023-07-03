@@ -18,7 +18,7 @@ print("generate transcript lst")
 tx_lst <- read.csv(paste0(topdir, "rep1/", "transcripts.txt"), header =F)
 tx_lst <- sapply(strsplit(as.character(tx_lst$V1), "\\|"), "[[", 1)
 
-print("makingP matrix")
+print("making P matrix")
 # Make E x T matrix P with rows E (equivalence class tx_lists) and columns ENST IDs
 #https://slowkow.com/notes/sparse-matrix/
 
