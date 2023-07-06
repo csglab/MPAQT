@@ -7,7 +7,10 @@ args = commandArgs(trailingOnly=TRUE)
 dir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 fasta <- strsplit(grep('--fasta*', args, value = TRUE), split = '=')[[1]][[2]]
 gtf <- strsplit(grep('--gtf*', args, value = TRUE), split = '=')[[1]][[2]]
+P <- strsplit(grep('--p_list*', args, value = TRUE), split = '=')[[1]][[2]]
+P <- readRDS(P)
 
+print("loading reference fasta")
 fasta <- Biostrings::readDNAStringSet(fasta, format="fasta")
 
 ensGTF <- rtracklayer::import(con=gtf, format="gtf")
@@ -36,9 +39,16 @@ low_freq <- names(counts[counts < 10])
 df$transcript_type[which(df$transcript_type %in% low_freq)] <- "other"
 
 # filter df based on transcripts in P
+
 df <- df %>% filter(tx_id %in% names(P))
 # confirm P and df have same transcripts
-identical(df$tx_id, names(P))
+print("cheching that P and reference transcriptome have same transcripts:")
+ident <- identical(df$tx_id, names(P))
+print(ident)
+if(!ident){
+    print("ERROR!!! different reference txome than the one used to generate P") 
+    quit(status = 1) 
+}
 
 # Add protein coding status
 df$protein_coding <- ifelse(df$gene_type == "protein_coding", 1, 0)
@@ -46,4 +56,6 @@ df$protein_coding <- ifelse(df$gene_type == "protein_coding", 1, 0)
 # Make covMx
 covDataFrame <- df[,c("tx_id","gc_ratio", "AT", "GC", "tx_length", "protein_coding")]
 covMx <- model.matrix( ~ log(gc_ratio) + log(tx_length) + protein_coding , data=covDataFrame )
-#saveRDS(covMx, file = file.path(topdir, "covMx.Rds"))
+
+print("saving covMx.Rds")
+saveRDS(covMx, file = file.path(dir, "covMx.Rds"))
