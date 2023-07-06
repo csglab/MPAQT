@@ -6,12 +6,14 @@
 #SBATCH --mem=20G
 #SBATCH --account=rrg-hsn
 
+env=~/projects/rrg-hsn/maposto/miniconda3/envs/r4/bin
+
 echo Combine replicate counts
 echo $topdir
-Rscript combine_replicate_counts.R --topdir=$topdir
+$env/Rscript combine_replicate_counts.R --topdir=$topdir
 
 echo Generate P matrix
-Rscript generate_p_matrix.R --topdir=$topdir 
+$env/Rscript generate_p_matrix.R --topdir=$topdir 
 
 echo Convert P matrix to list
-Rscript 01.convert_to_list.R --topdir=$topdir
+$env/Rscript 01.convert_to_list.R --topdir=$topdir

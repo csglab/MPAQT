@@ -20,14 +20,24 @@ cd $OUTPUT_DIR
 # SALMON
 
 # Modules required
-
 module load nixpkgs/16.09
 module load gcc/7.3.0
 module load openmpi/3.1.4
 module load salmon/1.3.0
 
 #SALMON_IDX=/project/6007998/maposto/reference/salmon/salmon_genomeIndex
+if [ $mode == "single" ];then
+  echo single
+  salmon quant -p 8 \
+                         -i ${SALMON_IDX} \
+                         -l A \
+                         --validateMappings \
+                         --gcBias \
+                         -o ${OUTPUT_DIR} \
+                         --unmatedReads $FASTQS
 
+elif [ $mode == "paired" ];then
+  echo paired
 salmon quant -p 8 \
                          -i ${SALMON_IDX} \
                          -l A \
@@ -36,3 +46,4 @@ salmon quant -p 8 \
                          -o ${OUTPUT_DIR} \
                          -1 $FASTQ1 \
                          -2 $FASTQ2
+fi

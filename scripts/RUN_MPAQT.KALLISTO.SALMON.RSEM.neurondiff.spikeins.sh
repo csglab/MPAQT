@@ -2,8 +2,8 @@
 #manifest=/project/6007998/maposto/PROJECTS/neurondiff/RUNS_RNAseq/manifest.neurondiff.txt
 manifest=/project/6007998/maposto/PROJECTS/neurondiff/RUNS_RNAseq/manifest.neurondiff.Day61.rep2.txt
 
-#date=June-9-2022
 date=June-29-2023
+mode=paired
 #samples=$( cat $manifest | cut -f 1 | head -1)
 samples=$( cat $manifest | cut -f 1 )
 
@@ -35,7 +35,7 @@ for sample in ${samples[@]};do
 
 	# SALMON 
 	echo SALMON
-	sbatch --export=SALMON_IDX=$SALMON_IDX,sample=$sample,OUTPUT_DIR=$OUTPUT_DIR,FASTQ1=$FASTQ1,FASTQ2=$FASTQ2 $scripts/SALMON.sh  
+	sbatch --export=SALMON_IDX=$SALMON_IDX,sample=$sample,mode=$mode,OUTPUT_DIR=$OUTPUT_DIR,FASTQ1=$FASTQ1,FASTQ2=$FASTQ2 $scripts/SALMON.sh  
 
 	# RSEM 
 	# sbatch --export=sample=$sample,OUTPUT_DIR=$OUTPUT_DIR,FASTQ1=$FASTQ1,FASTQ2=$FASTQ2 $scripts/RSEM.sh 
