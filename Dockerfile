@@ -53,3 +53,6 @@ RUN curl -LO https://github.com/pachterlab/kallisto/archive/refs/tags/v0.46.2.zi
 
 # Add Kallisto executable to PATH
 ENV PATH="/kallisto/kallisto-0.46.2/build/src:${PATH}"
+
+# Set workdir to MPAQT
+WORKDIR /MPAQT
