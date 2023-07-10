@@ -43,20 +43,16 @@ RUN apt-get install -y \
 
 ## Download and build Kallisto
 WORKDIR /kallisto
-#https://github.com/pachterlab/kallisto/archive/refs/tags/v0.46.2.zip
-RUN curl -LO https://github.com/pachterlab/kallisto/archive/refs/tags/v0.48.0.zip \
-    && unzip v0.48.0.zip \
-    && cd kallisto-0.48.0 \
+RUN curl -LO https://github.com/pachterlab/kallisto/archive/refs/tags/v0.46.2.zip \
+    && unzip v0.46.2.zip \
+    && cd kallisto-0.46.2 \
     && mkdir build \
     && cd build \
     && cmake .. \
     && make
 
 # Add Kallisto executable to PATH
-ENV PATH="/kallisto/kallisto-0.48.0/build/src:${PATH}"
+ENV PATH="/kallisto/kallisto-0.46.2/build/src:${PATH}"
 
 # Set workdir to MPAQT
 WORKDIR /MPAQT
-
-# Use Bash as the default shell
-SHELL ["/bin/bash", "-c"]

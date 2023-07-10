@@ -1,16 +1,17 @@
-library(dplyr)
-library(Biostrings)
-library(stringr)
-library(tidyr)
-library(Matrix)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(Biostrings))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(Matrix))
 
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
 topdir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
+reps <- strsplit(grep('--reps*', args, value = TRUE), split = '=')[[1]][[2]]
 dir <- paste0(topdir, "/", "rep1", "/")
 counts <- readRDS(paste0(dir, "ec.txs.joined.counts.Rds") )
 
-reps <- 24
+reps <- as.integer(reps)
 
 for (rep in 2:reps){
   dir <- paste0(topdir, "/", "rep", rep, "/")
