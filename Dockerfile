@@ -56,7 +56,7 @@ RUN curl -LO https://github.com/pachterlab/kallisto/archive/refs/tags/v0.48.0.zi
 ENV PATH="/kallisto/kallisto-0.48.0/build/src:${PATH}"
 
 # Set workdir to MPAQT
-WORKDIR /MPAQT
+WORKDIR /MPAQT/scripts
 
 # Use Bash as the default shell
 SHELL ["/bin/bash", "-c"]
