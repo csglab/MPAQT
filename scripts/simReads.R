@@ -1,4 +1,4 @@
-library(Rsubread)
+suppressPackageStartupMessages(library(Rsubread))
 
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
