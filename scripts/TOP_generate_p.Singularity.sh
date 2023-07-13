@@ -2,9 +2,9 @@
 
 # Set output directory
 #topdir=/home/maposto/scratch/pmat_single.TEST_github.JULY-3-2023
-topdir=/home/maposto/scratch/pmat_single.TEST_github.JULY-7-2023
-topdir=/home/maposto/scratch/pmat.TEST_singularity.JULY-12-2023
-topdir=/home/maposto/scratch/pmat.TEST_singularity.JULY-13-2023
+#topdir=/home/maposto/scratch/pmat_single.TEST_github.JULY-7-2023
+#topdir=/home/maposto/scratch/pmat.TEST_singularity.JULY-12-2023
+topdir=/scratch/maposto/pmat.TEST_singularity.JULY-13-2023
 mkdir -p $topdir
 
 mode=single

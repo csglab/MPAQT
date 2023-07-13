@@ -8,8 +8,8 @@ sample.name <- strsplit(grep('--sample*', args, value = TRUE), split = '=')[[1]]
 ref_txome <- strsplit(grep('--ref_txome*', args, value = TRUE), split = '=')[[1]][[2]]
 mode <- strsplit(grep('--mode*', args, value = TRUE), split = '=')[[1]][[2]]
 
-setwd(topdir)
 getwd()
+#setwd(topdir)
 # Define reference transcriptome
 
 # Scan through the fasta file to get transcript names and lengths
