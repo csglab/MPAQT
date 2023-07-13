@@ -6,6 +6,7 @@
 #        rep="${1#*=}"
 #        shift
 #        ;;
+
 echo reading in args
 while test $# -gt 0;do
     case $1 in
@@ -35,7 +36,7 @@ while test $# -gt 0;do
         #;;
     esac
 done
-
+#rep=$SLURM_ARRAY_TASK_ID
 echo Print arg values: 
 echo rep: $rep 
 echo topdir: $topdir 

@@ -5,7 +5,8 @@
 #topdir="/MPAQT/RUNS/P_mat_gen.TEST.July-7-2023"
 #topdir="/MPAQT/RUNS/P_mat_gen.TEST.July-10-2023"
 #topdir="/MPAQT/RUNS/P_mat_gen.TEST2.July-10-2023"
-topdir="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/P_mat_gen.cluster.July-11-2023"
+#topdir="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/P_mat_gen.cluster.July-11-2023"
+topdir="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/P_mat_gen.cluster.July-13-2023"
 mkdir -p $topdir
 
 mode=single
@@ -24,6 +25,3 @@ for (( rep = 1; rep <= $reps; rep++ )); do
 done
 
 bash RUN_combine_replicate_counts.Docker.sh $topdir $reps
-# COMBINE
-#job2=$(sbatch --account=rrg-hsn --dependency=afterany:$job1 --export=topdir=$topdir,env=$env RUN_combine_replicate_counts.sh) 
-#job2=$(sbatch --account=rrg-hsn --export=topdir=$topdir,env=$env RUN_combine_replicate_counts.sh) 
