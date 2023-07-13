@@ -6,7 +6,7 @@ singularity shell -B /home \
                   -B /tmp \
                   -B /project/6007998/maposto/reference \
                   -B /project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT \
-                     /project/6007998/maposto/MODULES/MPAQT.simg
+                     /project/6007998/maposto/MODULES/MPAQT.V2.simg
 
 singularity exec -B /home \
                   -B /tmp \
