@@ -17,6 +17,7 @@
 topdir="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/P_mat_gen.cluster.July-13-2023"
 topdir="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/P_mat_gen.cluster.July-17-2023"
 topdir="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/P_mat_gen.cluster.July-17-2023.V2"
+topdir="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/P_mat_gen.cluster.July-17-2023.V3"
 
 mkdir -p $topdir
 ref_txome=/project/6007998/maposto/reference/kallisto/gencode.v38.transcripts.fa

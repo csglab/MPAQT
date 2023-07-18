@@ -11,11 +11,14 @@ echo "STARTING: " $(date)
 
 #Singularity shell test
 #OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.July-13-2023       
-OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.July-17-2023       
+OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.July-17-2023
+#OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test
 mkdir $OUTPUT_DIR
-p_list=/project/6007998/maposto/reference/P/p_list.pmat_single.2.4_billion.Oct-15-2021.Rds
-p_rowSums=/project/6007998/maposto/reference/P/p_rowSums.pmat_single.2.4_billion.Oct-15-2021.Rds
-covMx=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.July-13-2023/covMx.Rds
+
+refdir=/project/6007998/maposto
+p_list=$refdir/reference/P/p_list.pmat_single.2.4_billion.Oct-15-2021.Rds
+p_rowSums=$refdir/reference/P/p_rowSums.pmat_single.2.4_billion.Oct-15-2021.Rds
+covMx=$refdir/reference/covMx.Rds
 
 # MPAQT
 Rscript MPAQT.R --topdir=$OUTPUT_DIR --p_list=$p_list --p_rowSums=$p_rowSums --covMx=$covMx
