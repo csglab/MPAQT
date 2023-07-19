@@ -14,6 +14,7 @@ n <- readRDS(n)
 covMx <- strsplit(grep('--covMx*', args, value = TRUE), split = '=')[[1]][[2]]
 covMx <- readRDS(covMx)
 
+sample <- strsplit(grep('--sample*', args, value = TRUE), split = '=')[[1]][[2]] 
 
 #### Function for fitting transcript abundances
 # P: The matrix P for the type 1 reads (i.e., short RNA-seq read type), in the
@@ -272,7 +273,6 @@ fit_model.v9.better_convergence <- function( P, n, n2=rep(0,length(P)), covMx=re
 print("PREPARE LR DATA")
 #####
 sqanti_fields <- c("chrom","isoform", "associated_gene", "associated_transcript", "exons", "structural_category", "FL", "subcategory", "CDS_length")
-sample <- "SOX10_Day61.rep1"
 sqanti3 <- read.csv(file=file.path(topdir, paste0( sample,   ".transcriptome.sqanti3_classification.filtered_lite_classification.txt" ) ), sep="\t", header=T)[sqanti_fields]
 
 # Remove novel transcripts

@@ -34,6 +34,10 @@ while test $# -gt 0;do
         scripts="${1#*=}"
         shift
         ;;
+        --lib_size=*)
+        lib_size="${1#*=}"
+        shift
+        ;;
         #*)
         #OTHER_ARGUMENTS+=("$1")
         #shift # Remove generic argument from processing
@@ -47,6 +51,7 @@ echo topdir: $topdir
 echo mode: $mode 
 echo ref_txome: $ref_txome 
 echo KALLISTO_IDX: $KALLISTO_IDX
+echo lib_size: $lib_size
 echo
 echo "STARTING: " $(date)
 echo
@@ -61,7 +66,7 @@ echo Running simReads.R in $mode mode
 echo $OUTPUT_DIR
 mkdir -p $OUTPUT_DIR
 cd $OUTPUT_DIR
-Rscript $scripts/simReads.R --rep=$rep --topdir=$OUTPUT_DIR --sample=$sample --ref_txome=$ref_txome --mode=$mode
+Rscript $scripts/simReads.R --rep=$rep --topdir=$OUTPUT_DIR --sample=$sample --ref_txome=$ref_txome --mode=$mode --lib_size=$lib_size
 
 # Run kallisto bus
 echo Run kallisto bus $rep
