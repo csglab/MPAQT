@@ -20,8 +20,8 @@ while test $# -gt 0;do
         p_rowSums="${1#*=}"
         shift
         ;;
-        --=*)
-        ="${1#*=}"
+        --covMx=*)
+        covMx="${1#*=}"
         shift
         ;;
         --sample=*)
@@ -44,14 +44,19 @@ while test $# -gt 0;do
 done
 
 echo Print arg values:
-echo topdir: $topdir
-echo mode: $mode
-echo ref_txome: $ref_txome
+echo scripts: $scripts
 echo KALLISTO_IDX: $KALLISTO_IDX
-echo lib_size: $lib_size
+echo p_list: $p_list
+echo p_rowSums: $p_rowSums
+echo covMx: $covMx
+echo sample: $sample
+echo FASTQ1: $FASTQ1
+echo FASTQ2: $FASTQ2
+echo OUTPUT_DIR: $OUTPUT_DIR
 echo
 echo "STARTING: " $(date)
 echo
+ls $scripts $KALLISTO_IDX  $p_list $p_rowSums $covMx $FASTQ1 $FASTQ2 $OUTPUT_DIR
 
 # MPAQT: KALLISTO BUS
 kallisto bus --num --paired  -o $OUTPUT_DIR -i \
