@@ -2,7 +2,6 @@
 
 echo "STARTING: " $(date)
 
-
 # DOCKER
 #OUTPUT_DIR=/MPAQT/RUNS/MPAQT_test.July-13-2023 
 #mkdir $OUTPUT_DIR
