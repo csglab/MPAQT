@@ -1,7 +1,18 @@
 #!/bin/bash
 
-topdir=$1
-reps=$2
+while test $# -gt 0;do
+    case $1 in
+        --reps=*)
+        reps="${1#*=}"
+        shift
+        ;;
+        --topdir=*)
+        topdir="${1#*=}"
+        shift
+        ;;
+    esac
+done
+
 echo Combine replicate counts
 echo $topdir
 Rscript combine_replicate_counts.R --topdir=$topdir --reps=$reps
