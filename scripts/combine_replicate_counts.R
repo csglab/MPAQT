@@ -8,11 +8,11 @@ args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
 topdir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 reps <- strsplit(grep('--reps*', args, value = TRUE), split = '=')[[1]][[2]]
+reps <- as.integer(reps)
 dir <- paste0(topdir, "/", "rep1", "/")
 counts <- readRDS(paste0(dir, "ec.txs.joined.counts.Rds") )
 
-reps <- as.integer(reps)
-
+print(c(topdir, reps, dir) )
 for (rep in 2:reps){
   dir <- paste0(topdir, "/", "rep", rep, "/")
   print(dir)
@@ -29,4 +29,4 @@ for (rep in 2:reps){
 }
 
 
-saveRDS(counts, file=paste0(topdir, "/", "rep_counts.24reps.Rds"))
+saveRDS(counts, file=file.path(topdir, paste0("rep_counts.",reps,"reps.Rds")))

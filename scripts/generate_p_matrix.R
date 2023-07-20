@@ -8,9 +8,11 @@ args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
 topdir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 topdir <- paste0(topdir, "/")
+reps <- strsplit(grep('--reps*', args, value = TRUE), split = '=')[[1]][[2]]
+reps <- as.integer(reps)
 
 # load counts and get ec_lst with ECs named based on included txs
-counts <- readRDS(paste0(topdir, "rep_counts.24reps.Rds"))
+counts <- readRDS(file.path(topdir, paste0("rep_counts.",reps,"reps.Rds")))
 ec_lst <- unique(counts$txs)
 
 # all transcripts
