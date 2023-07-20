@@ -7,9 +7,10 @@ topdir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 sample.name <- strsplit(grep('--sample*', args, value = TRUE), split = '=')[[1]][[2]]
 ref_txome <- strsplit(grep('--ref_txome*', args, value = TRUE), split = '=')[[1]][[2]]
 mode <- strsplit(grep('--mode*', args, value = TRUE), split = '=')[[1]][[2]]
+lib.size <- as.integer(strsplit(grep('--lib_size*', args, value = TRUE), split = '=')[[1]][[2]]) 
 
-setwd(topdir)
 getwd()
+#setwd(topdir)
 # Define reference transcriptome
 
 # Scan through the fasta file to get transcript names and lengths
@@ -31,7 +32,7 @@ if (mode == "single"){
 print(paste0("paired mode is: ", paired))
 
 #lib.size <- 100000000 
-lib.size <- 100000
+#lib.size <- 100000
 # generate reads
 true.counts <- simReads(ref_txome, 
 	TPMs,

@@ -30,6 +30,14 @@ while test $# -gt 0;do
         KALLISTO_IDX="${1#*=}"
         shift
         ;;
+        --scripts=*)
+        scripts="${1#*=}"
+        shift
+        ;;
+        --lib_size=*)
+        lib_size="${1#*=}"
+        shift
+        ;;
         #*)
         #OTHER_ARGUMENTS+=("$1")
         #shift # Remove generic argument from processing
@@ -43,6 +51,7 @@ echo topdir: $topdir
 echo mode: $mode 
 echo ref_txome: $ref_txome 
 echo KALLISTO_IDX: $KALLISTO_IDX
+echo lib_size: $lib_size
 echo
 echo "STARTING: " $(date)
 echo
@@ -56,7 +65,8 @@ echo Generating fastq number $rep
 echo Running simReads.R in $mode mode
 echo $OUTPUT_DIR
 mkdir -p $OUTPUT_DIR
-Rscript simReads.R --rep=$rep --topdir=$OUTPUT_DIR --sample=$sample --ref_txome=$ref_txome --mode=$mode
+cd $OUTPUT_DIR
+Rscript $scripts/simReads.R --rep=$rep --topdir=$OUTPUT_DIR --sample=$sample --ref_txome=$ref_txome --mode=$mode --lib_size=$lib_size
 
 # Run kallisto bus
 echo Run kallisto bus $rep
@@ -76,6 +86,7 @@ cat $OUTPUT_DIR/$sample\_R1.fastq.gz | gunzip  | grep ^@R  | awk  '{gsub("\\|","
 
 # Count reads per-EC
 echo Count reads per-EC
-Rscript p_matrix_counts.R --rep=$rep --topdir=$OUTPUT_DIR
+echo Rscript p_matrix_counts.R --rep=$rep --topdir=$OUTPUT_DIR
+Rscript $scripts/p_matrix_counts.R --rep=$rep --topdir=$OUTPUT_DIR
 
 echo "ENDING: " $(date)
