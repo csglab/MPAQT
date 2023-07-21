@@ -31,8 +31,6 @@ if (mode == "single"){
 }
 print(paste0("paired mode is: ", paired))
 
-#lib.size <- 100000000 
-#lib.size <- 100000
 # generate reads
 true.counts <- simReads(ref_txome, 
 	TPMs,
