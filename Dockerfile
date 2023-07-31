@@ -76,5 +76,8 @@ ENV PATH="/kallisto/kallisto-0.48.0/build/src:${PATH}"
 # Set workdir to MPAQT
 WORKDIR /MPAQT/scripts
 
+ENV PATH="/MPAQT/scripts:${PATH}"
+
+
 # Use Bash as the default shell
 SHELL ["/bin/bash", "-c"]
