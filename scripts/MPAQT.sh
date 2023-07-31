@@ -56,7 +56,8 @@ echo OUTPUT_DIR: $OUTPUT_DIR
 echo
 echo "STARTING: " $(date)
 echo
-ls $scripts $KALLISTO_IDX  $p_list $p_rowSums $covMx $FASTQ1 $FASTQ2 $OUTPUT_DIR
+ls $KALLISTO_IDX  $p_list $p_rowSums $covMx $FASTQ1 $FASTQ2 $OUTPUT_DIR
+ls -d $scripts
 
 # MPAQT: KALLISTO BUS
 kallisto bus --num --paired  -o $OUTPUT_DIR -i \
