@@ -17,7 +17,7 @@ echo "STARTING: " $(date)
 FASTQ1=/project/6007998/maposto/PROJECTS/neurondiff/20220415_neurondiff_RNAseq/SOX10_Day61_replicate_1_S5_R1_001.fastq.gz
 FASTQ2=/project/6007998/maposto/PROJECTS/neurondiff/20220415_neurondiff_RNAseq/SOX10_Day61_replicate_1_S5_R2_001.fastq.gz
 sample=SOX10_Day61.rep1
-OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL
+OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL.V2
 mkdir $OUTPUT_DIR
 
 refdir=/project/6007998/maposto
