@@ -316,19 +316,19 @@ n_sample[names(n)[which(! names(n) %in%  reads.ecs.counts$txs )]] <- 0
 # order n_sample vector by order of n from P
 n_sample <- n_sample[names(n)]
 
-#tol=1e-4
 tol=1e-10
 itelim=100
-# Fit model with only SR
-#res <- fit_model( P, n_sample,  tol=tol, itelim=itelim )
 
-set.seed(789)
 print("FITTING MPAQT WITH SR DATA ONLY")
 res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
 print("FITTING MPAQT WITH LR + SR DATA")
 res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR.counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
-#res <- readRDS(' fit.tol= 1e-04 .itelim= 100 .Rds') 
-#saveRDS(res, file=file.path(topdir, paste0("fit.tol=", tol, ".itelim=", itelim, ".Rds") ))
 print("SAVING Rds OBJECTS")
 saveRDS(res, file=file.path(topdir, "MPAQT_output.SR.Rds"))
 saveRDS(res2, file=file.path(topdir, "MPAQT_output.LR_SR.Rds"))
+
+MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
+write.table(MPAQT.SR.df, file=file.path(topdir, "MPAQT_output.SR.tsv"), quote=F, row.names=F, sep = "\t")
+MPAQT.LR.df <- data.frame(transcript_id=names(res2$tpm), TPM=res2$tpm)
+write.table(MPAQT.LR.df, file=file.path(topdir, "MPAQT_output.LR_SR.tsv") ,quote=F, row.names=F, sep = "\t")
+
