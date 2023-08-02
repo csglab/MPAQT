@@ -291,13 +291,7 @@ names(LR.counts) <- names(P)
 # assign FL values to corresponding ENST IDs
 LR.counts[sqanti3.filt.counts$associated_transcript] <- sqanti3.filt.counts$FL
 
-#LR.counts <- data.frame(tx_id = names(LR.counts), FL = LR.counts)
-#names(LR.counts) <- c("tx_id", paste0("FL.", sample))
-
-#LR_count_lst[[sample]] <- LR.counts
-
-
-#####
+# PREPARE SR DATA
 print("PREPARE SR DATA")
 # Read in reads.ecs.counts
 reads.ecs.counts <- readRDS(file.path(topdir, "reads.ecs.counts.Rds"))
@@ -319,14 +313,19 @@ n_sample <- n_sample[names(n)]
 tol=1e-10
 itelim=100
 
+# Run MPAQT
 print("FITTING MPAQT WITH SR DATA ONLY")
 res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
 print("FITTING MPAQT WITH LR + SR DATA")
 res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR.counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
+
+# Save MPAQT output as Rds objects containing all output of the MPAQT model
+# including various statistics, weights, etc
 print("SAVING Rds OBJECTS")
 saveRDS(res, file=file.path(topdir, "MPAQT_output.SR.Rds"))
 saveRDS(res2, file=file.path(topdir, "MPAQT_output.LR_SR.Rds"))
 
+# Writes plain text .tsv files containing only transcript IDs and TPM values
 MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
 write.table(MPAQT.SR.df, file=file.path(topdir, "MPAQT_output.SR.tsv"), quote=F, row.names=F, sep = "\t")
 MPAQT.LR.df <- data.frame(transcript_id=names(res2$tpm), TPM=res2$tpm)
