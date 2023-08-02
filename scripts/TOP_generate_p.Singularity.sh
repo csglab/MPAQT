@@ -6,7 +6,9 @@
 #topdir=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/pmat_sing.JULY-19-2023
 #topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.JULY-20-2023
 #topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.JULY-20-2023_2
-topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.FULL.JULY-20-2023
+#topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.FULL.JULY-20-2023
+#topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-1-2023
+topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-1-2023.V2
 
 mkdir -p $topdir
 mkdir logs

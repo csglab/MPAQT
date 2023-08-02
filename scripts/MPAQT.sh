@@ -60,15 +60,24 @@ ls $KALLISTO_IDX  $p_list $p_rowSums $covMx $FASTQ1 $FASTQ2 $OUTPUT_DIR
 ls -d $scripts
 
 # MPAQT: KALLISTO BUS
+# Runs kallisto's pseudoalignment tool to map reads to equivalence classes. 
+# Generates a bus file which contains the information specifying which 
+# equivalence class each read corresponds to
 kallisto bus --num --paired  -o $OUTPUT_DIR -i \
   $KALLISTO_IDX \
   $FASTQ1 \
   $FASTQ2
 
+# BUSTOOLS TEXT
+# Converts the bus file into a text file which is more easily useable
 bustools text -f -o $OUTPUT_DIR/output.bus.txt $OUTPUT_DIR/output.bus
 
-#EC counts
+# EC COUNTS: 
+# counts the number of reads in each EC, and outputs this data into a 
+# format compatible with input to MPAQT.R
+# Outputs file reads.ecs.counts.Rds 
 Rscript $scripts/EC_counts_bustools.R --topdir=$OUTPUT_DIR
 
 # MPAQT
+# Runs the MPAQT statistical framework
 Rscript $scripts/MPAQT.R --topdir=$OUTPUT_DIR --p_list=$p_list --p_rowSums=$p_rowSums --covMx=$covMx --sample=$sample

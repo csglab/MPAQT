@@ -1,3 +1,6 @@
+# This script converts the 24 replicates into a sparse matrix
+# The file rep_counts.24reps.Rds 
+
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(Biostrings))
 suppressPackageStartupMessages(library(stringr))
