@@ -1,3 +1,7 @@
+# This script generates simulated short-read FASTQs using a provided reference transcriptome
+# Can produce either single-end or paired-end FASTQ files
+# Generates the fastqs such that all transcripts have equal abundance 
+
 suppressPackageStartupMessages(library(Rsubread))
 
 args = commandArgs(trailingOnly=TRUE)
