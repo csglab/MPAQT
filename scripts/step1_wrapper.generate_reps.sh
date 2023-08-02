@@ -9,7 +9,7 @@ singularity exec \
                   -B $topdir \
                   -B $MPAQT \
                      $SIMG \
-                     bash $scripts/replicates_combined_script.Docker.sh --rep=$SLURM_ARRAY_TASK_ID --topdir=$topdir --mode=$mode --ref_txome=$ref_txome --KALLISTO_IDX=$KALLISTO_IDX --lib_size=$lib_size
+                     bash $scripts/generate_replicate_pmat.sh --rep=$SLURM_ARRAY_TASK_ID --topdir=$topdir --mode=$mode --ref_txome=$ref_txome --KALLISTO_IDX=$KALLISTO_IDX --lib_size=$lib_size
 #singularity exec \
 #                  -B /project/6007998/maposto/reference \
 #                  -B $topdir \
