@@ -8,11 +8,24 @@ fastq_dir=/project/6007998/maposto/PROJECTS/neurondiff/20220415_neurondiff_RNAse
 refdir=/project/6007998/maposto/reference
 #OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL.V2
 OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL.V3
+OUTPUT_DIR=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/tmp2
 mkdir $OUTPUT_DIR
+SIMG=/project/6007998/maposto/MODULES/MPAQT.V2.simg
+
+# SAMPLE PAIRED
 FASTQ1=$fastq_dir/SOX10_Day61_replicate_1_S5_R1_001.fastq.gz
 FASTQ2=$fastq_dir/SOX10_Day61_replicate_1_S5_R2_001.fastq.gz
+FASTQS=$FASTQ1,$FASTQ2
 sample=SOX10_Day61.rep1
-SIMG=/project/6007998/maposto/MODULES/MPAQT.V2.simg
+mode=paired
+
+# SAMPLE SINGLE END
+fastq_dir=/project/6007998/maposto/PROJECTS/09152015_MDA-LM2_RNA-seq/
+FASTQ1=/project/6007998/maposto/PROJECTS/09152015_MDA-LM2_RNA-seq/MDA-Par_r1.fastq
+FASTQ2=/project/6007998/maposto/PROJECTS/09152015_MDA-LM2_RNA-seq/MDA-Par_r2.fastq
+FASTQS=$FASTQ1,$FASTQ2
+mode=single
+sample=SOX10_Day61.rep1
 
 # INPUT
 scripts=$MPAQT/scripts
@@ -32,9 +45,11 @@ singularity exec -B $refdir \
 	            --p_rowSums=$p_rowSums \
 	            --covMx=$covMx \
 	            --sample=$sample \
-	            --FASTQ1=$FASTQ1 \
-	            --FASTQ2=$FASTQ2 \
+	            --FASTQS=$FASTQS\
+	            --mode=$mode\
 	            --OUTPUT_DIR=$OUTPUT_DIR
+#	            --FASTQ2=$FASTQ2 \
+#	            --FASTQ1=$FASTQ1 \
 
 # DOCKER
 #OUTPUT_DIR=/MPAQT/RUNS/MPAQT_test.July-13-2023 
