@@ -273,6 +273,8 @@ fit_model.v9.better_convergence <- function( P, n, n2=rep(0,length(P)), covMx=re
 print("PREPARE LR DATA")
 #####
 sqanti_fields <- c("chrom","isoform", "associated_gene", "associated_transcript", "exons", "structural_category", "FL", "subcategory", "CDS_length")
+#/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL/SOX10_Day61.rep1.transcriptome.sqanti3_classification.filtered_lite_classification.txt
+# sqanti3 <- read.csv(file="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL/SOX10_Day61.rep1.transcriptome.sqanti3_classification.filtered_lite_classification.txt", sep="\t", header=T)[sqanti_fields]
 sqanti3 <- read.csv(file=file.path(topdir, paste0( sample,   ".transcriptome.sqanti3_classification.filtered_lite_classification.txt" ) ), sep="\t", header=T)[sqanti_fields]
 
 # Remove novel transcripts
