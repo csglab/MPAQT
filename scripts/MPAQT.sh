@@ -32,6 +32,10 @@ while test $# -gt 0;do
         FASTQS="${1#*=}"
         shift
         ;;
+        --LR_counts*)
+        LR_counts="${1#*=}"
+        shift
+        ;;
         --mode=*)
         mode="${1#*=}"
         shift
@@ -73,40 +77,40 @@ IFS=',' read -ra FASTQS <<< "$FASTQS"
 echo FASTQS: ${FASTQS[@]}
 #exit 0
 
-# MPAQT: KALLISTO BUS
-# Runs kallisto's pseudoalignment tool to map reads to equivalence classes. 
-# Generates a bus file which contains the information specifying which 
-# equivalence class each read corresponds to
-if [ "$mode" = paired ]; then
-echo paired end
-FASTQ1=${FASTQS[0]}
-FASTQ2=${FASTQS[1]}
-echo FASTQ1: $FASTQ1 
-echo FASTQ2: $FASTQ2 
-kallisto bus --num --paired -t 32  -o $OUTPUT_DIR -i \
-  $KALLISTO_IDX \
-  $FASTQ1 \
-  $FASTQ2
-
-elif [ "$mode" = single ]; then
-echo single end
-kallisto bus --num -o $OUTPUT_DIR -i \
-  $TRANSCRIPTOME \
-  ${FASTQS[@]} 
-
-else
- exit 1
-fi
-# BUSTOOLS TEXT
-# Converts the bus file into a text file which is more easily useable
-bustools text -f -o $OUTPUT_DIR/output.bus.txt $OUTPUT_DIR/output.bus
-
-# EC COUNTS: 
-# counts the number of reads in each EC, and outputs this data into a 
-# format compatible with input to MPAQT.R
-# Outputs file reads.ecs.counts.Rds 
-Rscript $scripts/EC_counts_bustools.R --topdir=$OUTPUT_DIR
+## MPAQT: KALLISTO BUS
+## Runs kallisto's pseudoalignment tool to map reads to equivalence classes. 
+## Generates a bus file which contains the information specifying which 
+## equivalence class each read corresponds to
+#if [ "$mode" = paired ]; then
+#echo paired end
+#FASTQ1=${FASTQS[0]}
+#FASTQ2=${FASTQS[1]}
+#echo FASTQ1: $FASTQ1 
+#echo FASTQ2: $FASTQ2 
+#kallisto bus --num --paired -t 32  -o $OUTPUT_DIR -i \
+#  $KALLISTO_IDX \
+#  $FASTQ1 \
+#  $FASTQ2
+#
+#elif [ "$mode" = single ]; then
+#echo single end
+#kallisto bus --num -o $OUTPUT_DIR -i \
+#  $TRANSCRIPTOME \
+#  ${FASTQS[@]} 
+#
+#else
+# exit 1
+#fi
+## BUSTOOLS TEXT
+## Converts the bus file into a text file which is more easily useable
+#bustools text -f -o $OUTPUT_DIR/output.bus.txt $OUTPUT_DIR/output.bus
+#
+## EC COUNTS: 
+## counts the number of reads in each EC, and outputs this data into a 
+## format compatible with input to MPAQT.R
+## Outputs file reads.ecs.counts.Rds 
+#Rscript $scripts/EC_counts_bustools.R --topdir=$OUTPUT_DIR
 
 # MPAQT
 # Runs the MPAQT statistical framework
-Rscript $scripts/MPAQT.R --topdir=$OUTPUT_DIR --p_list=$p_list --p_rowSums=$p_rowSums --covMx=$covMx --sample=$sample
+Rscript $scripts/MPAQT.R --topdir=$OUTPUT_DIR --p_list=$p_list --p_rowSums=$p_rowSums --covMx=$covMx --sample=$sample --LR_counts=$LR_counts

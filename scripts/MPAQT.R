@@ -16,104 +16,8 @@ covMx <- readRDS(covMx)
 
 sample <- strsplit(grep('--sample*', args, value = TRUE), split = '=')[[1]][[2]] 
 
-#### Function for fitting transcript abundances
-# P: The matrix P for the type 1 reads (i.e., short RNA-seq read type), in the
-#   list format
-# n: The vector of type 1 read counts observed for each EC, in the same order
-#   as the rows of P matrix
-# n2: The vector of type 2 read counts (i.e., long reads) for each transcript,
-#   in the same order as the columns of P matrix
-# tol: The desired accuracy. The algorithm runs until the improvement in
-#   log-liklihood (LL) is smaller than tol multiplied by LL improvement in
-#   iteration 2
-# itelim: The maximum number of iterations to achieve convergence
-fit_model <- function( P, n, n2=rep(0,length(P)), tol=1e-4, itelim=100 )
-{
-  # Initialize the vector of transcript abundances
-  beta <- rep(0,length(P))
-  # Initialize the library size ratio for type2/type1 reads
-  libsize2 <- 0
-  # Initialize the vector of the current model fit for type 1 reads (i.e. the
-  #   EC abundances predicted by the current model parameters)
-  y <- rep(0,length(n))
-
-  ######## The code for coordinate descent optimization
-
-  prev_LL <- NA # The log-likelihood value after the previous round of optimization
-  ref_dLL <- NA # The improvement in the log-liklihood after the second round. This value will be used to gauge when LL is not improving too much anymore
-  converged <- F
-  for( ite in 1:itelim )
-  {
-    cat("Iteration",ite,"...\n")
-
-    # In each iteration, go over every transcript once and optimize the transcript abundance, given the estimated abundances of other transcripts
-    for( j in 1:length(P) )
-    {
-      # To prevent repetitive array calls, store the values that are needed
-      #   during optimization
-      n_subset <- n[ P[[j]]$i ] # the type 1 read counts for ECs that have non-zero probabilities for transcript j
-      y_subset <- y[ P[[j]]$i ] # the current fit for ECs that have non-zero probabilities for transcript j
-      p <- P[[j]]$x # the non-zero EC probabilities
-      n2_subset <- n2[j] # the type 2 read count for transcript j
-      beta_subset <- beta[j] # the current fit for abundance of transcript j
-
-      # Poisson error model
-      #  Minimizes the Poisson -LL (negative log-likelihood), which is:
-      #    [ lambda - k*log(lambda) ]
-      #  To prevent taking log of zero (which may occur when k is zero), a small
-      #    value is added to lambda.
-      #  Note that for each transcript j, the LL should be calculated for both
-      #    short and long reads.
-      opt_res <- optimize(
-        function(x) { # x is the difference between the new and old beta estimate for transcript j
-          lambda <- y_subset+p*x # The mean for EC counts (type 1 reads)
-          lambda2 <- (beta_subset+x)*libsize2 # The mean for type 2 (long) read count
-          sum( lambda - n_subset*log(lambda+1e-30) ) +
-            lambda2 - n2_subset*log(lambda2+1e-30) },
-        lower=-beta[j], upper=10000 )
-
-      beta[j] <- beta[j]+opt_res$minimum
-      y[ P[[j]]$i ] <- y[ P[[j]]$i ] + p*opt_res$minimum
-    }
-
-    # optimize the library size ratio for type2/type1 reads, given the current
-    #   beta estimates
-    libsize2 <- sum(n2)/sum(beta) # this is the maximum likelihood Poisson estimator
-
-    # log-likelihood after this round of optimization
-    LL <-
-      sum( n*log(y+1e-30) - y ) + # The LL for type 1 reads
-      sum( n2*log(beta*libsize2+1e-30) - beta*libsize2 ) # The LL for type 2 reads
-    cat("Log-Likelihood:",LL,"\n")
-
-    dLL <- LL - prev_LL # How much has it improved since the last round?
-    if(ite==2) { ref_dLL <- dLL } # If this is the second iteration, this dLL will be used as reference for evaluating convergence
-    if( !is.na(dLL) & !is.na(ref_dLL) ) {
-      if( dLL < ref_dLL*tol ) {
-        cat("Model converged.\n")
-        converged <- T
-        break
-      }
-    }
-    prev_LL <- LL
-  }
-
-  if( !converged ) {
-    warning("Model did not converge.")
-  }
-
-  names(beta) <- names(P)
-
-  # A list object is returned:
-  return( list(
-    beta=beta, # The beta coefficients, corresponding to the abundance of each transcript
-    tpm=beta*1000000/sum(beta), # The normalized beta coefficients, i.e. TPM
-    libsize2=libsize2, # The library size for type 2 reads relative to type 1 reads
-    LL=LL, # The log-likelihood of model
-    fitted.values=y # The fitted values for type 1 reads
-    ) )
-}
-
+LR.counts <- strsplit(grep('--LR_counts*', args, value = TRUE), split = '=')[[1]][[2]]
+LR.counts <- readRDS(LR.counts)
 
 #### Function for fitting transcript abundances
 # P: The matrix P for the type 1 reads (i.e., short RNA-seq read type), in the
@@ -270,28 +174,29 @@ fit_model.v9.better_convergence <- function( P, n, n2=rep(0,length(P)), covMx=re
 }
 
 # PREPARE LR DATA
-print("PREPARE LR DATA")
+#print("PREPARE LR DATA")
 #####
-sqanti_fields <- c("chrom","isoform", "associated_gene", "associated_transcript", "exons", "structural_category", "FL", "subcategory", "CDS_length")
-#/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL/SOX10_Day61.rep1.transcriptome.sqanti3_classification.filtered_lite_classification.txt
-# sqanti3 <- read.csv(file="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL/SOX10_Day61.rep1.transcriptome.sqanti3_classification.filtered_lite_classification.txt", sep="\t", header=T)[sqanti_fields]
-sqanti3 <- read.csv(file=file.path(topdir, paste0( sample,   ".transcriptome.sqanti3_classification.filtered_lite_classification.txt" ) ), sep="\t", header=T)[sqanti_fields]
-
-# Remove novel transcripts
-sqanti3.filt <- sqanti3[grep(sqanti3$associated_transcript, pattern= "ENST"),] 
-
-# Count FL per-transcript ( known/associated transcripts)
-sqanti3.filt.counts  <- sqanti3.filt %>% dplyr::group_by(associated_transcript) %>%
-dplyr::summarise(FL = sum(FL))
-# Filter LR df for ENSTs in P
-sqanti3.filt.counts <- sqanti3.filt.counts %>% filter(associated_transcript  %in% intersect(associated_transcript, names(P)) )
-
-# Initialize LR.counts vector for all ENSTs in P
-LR.counts <- rep(0, length(names(P)))
-names(LR.counts) <- names(P)
-
-# assign FL values to corresponding ENST IDs
-LR.counts[sqanti3.filt.counts$associated_transcript] <- sqanti3.filt.counts$FL
+#sqanti_fields <- c("chrom","isoform", "associated_gene", "associated_transcript", "exons", "structural_category", "FL", "subcategory", "CDS_length")
+##/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL/SOX10_Day61.rep1.transcriptome.sqanti3_classification.filtered_lite_classification.txt
+## sqanti3 <- read.csv(file="/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL/SOX10_Day61.rep1.transcriptome.sqanti3_classification.filtered_lite_classification.txt", sep="\t", header=T)[sqanti_fields]
+#sqanti3 <- read.csv(file=file.path(topdir, paste0( sample,   ".transcriptome.sqanti3_classification.filtered_lite_classification.txt" ) ), sep="\t", header=T)[sqanti_fields]
+#
+## Remove novel transcripts
+#sqanti3.filt <- sqanti3[grep(sqanti3$associated_transcript, pattern= "ENST"),] 
+#
+## Count FL per-transcript ( known/associated transcripts)
+#sqanti3.filt.counts  <- sqanti3.filt %>% dplyr::group_by(associated_transcript) %>%
+#dplyr::summarise(FL = sum(FL))
+#
+## Filter LR df for ENSTs in P
+#sqanti3.filt.counts <- sqanti3.filt.counts %>% filter(associated_transcript  %in% intersect(associated_transcript, names(P)) )
+#
+## Initialize LR.counts vector for all ENSTs in P
+#LR.counts <- rep(0, length(names(P)))
+#names(LR.counts) <- names(P)
+#
+## assign FL values to corresponding ENST IDs
+#LR.counts[sqanti3.filt.counts$associated_transcript] <- sqanti3.filt.counts$FL
 
 # PREPARE SR DATA
 print("PREPARE SR DATA")
@@ -306,7 +211,7 @@ reads.ecs.counts <- reads.ecs.counts[which(reads.ecs.counts$txs %in% names(n) ),
 n_sample <- reads.ecs.counts$n
 names(n_sample) <- reads.ecs.counts$txs
 
-# Assign "0" to ECs not in in this sample
+# Assign "0" to ECs not in this sample
 n_sample[names(n)[which(! names(n) %in%  reads.ecs.counts$txs )]] <- 0
 
 # order n_sample vector by order of n from P
@@ -316,20 +221,23 @@ tol=1e-10
 itelim=100
 
 # Run MPAQT
-print("FITTING MPAQT WITH SR DATA ONLY")
-res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
-print("FITTING MPAQT WITH LR + SR DATA")
-res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR.counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
-
 # Save MPAQT output as Rds objects containing all output of the MPAQT model
 # including various statistics, weights, etc
-print("SAVING Rds OBJECTS")
-saveRDS(res, file=file.path(topdir, "MPAQT_output.SR.Rds"))
-saveRDS(res2, file=file.path(topdir, "MPAQT_output.LR_SR.Rds"))
+# Write plain text .tsv files containing only transcript IDs and TPM values
 
-# Writes plain text .tsv files containing only transcript IDs and TPM values
-MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
-write.table(MPAQT.SR.df, file=file.path(topdir, "MPAQT_output.SR.tsv"), quote=F, row.names=F, sep = "\t")
+#print("FITTING MPAQT WITH SR DATA ONLY")
+#res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
+#print("SAVING Rds OBJECT")
+#saveRDS(res, file=file.path(topdir, "MPAQT_output.SR.Rds"))
+#MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
+#print("Writing tsv MPAQT output")
+#write.table(MPAQT.SR.df, file=file.path(topdir, "MPAQT_output.SR.tsv"), quote=F, row.names=F, sep = "\t")
+
+print("FITTING MPAQT WITH LR + SR DATA")
+res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR.counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
+print("SAVING Rds OBJECT")
+saveRDS(res2, file=file.path(topdir, "MPAQT_output.LR_SR.Rds"))
+print("Writing tsv MPAQT output")
 MPAQT.LR.df <- data.frame(transcript_id=names(res2$tpm), TPM=res2$tpm)
 write.table(MPAQT.LR.df, file=file.path(topdir, "MPAQT_output.LR_SR.tsv") ,quote=F, row.names=F, sep = "\t")
 
