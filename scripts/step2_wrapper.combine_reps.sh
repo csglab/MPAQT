@@ -10,4 +10,4 @@ singularity exec \
                   -B $topdir \
                   -B $MPAQT \
                      $SIMG \
-                     bash $scripts/RUN_combine_replicate_counts.sh --topdir=$topdir --reps=$reps 
+                     bash $scripts/combine_pmat_replicates.sh --topdir=$topdir --reps=$reps 
