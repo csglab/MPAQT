@@ -6,7 +6,6 @@ topdir <- paste0(topdir, "/")
 
 P <- readRDS(paste0(topdir, "p_matrix.Rds"))
 P <- as(P,"dgCMatrix")
-saveRDS(rowSums(P), paste0(topdir, "p_rowSums.Rds"))
 
 #dim(P)
 
@@ -43,4 +42,7 @@ for( ite in 1:100 )
 if( sum(x!=y) > 0 ) { stop("Something went wrong.")}
 
 
-saveRDS(P.list,  paste0(topdir, "p_list.Rds"))
+#saveRDS(P.list,  paste0(topdir, "p_list.Rds"))
+#saveRDS(rowSums(P), paste0(topdir, "p_rowSums.Rds"))
+P <- list(P.list, rowSums(P) )
+saveRDS(P, file.path(topdir, "P.Rds"))
