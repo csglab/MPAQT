@@ -12,20 +12,12 @@ while test $# -gt 0;do
         KALLISTO_IDX="${1#*=}"
         shift
         ;;
-        --p_list=*)
-        p_list="${1#*=}"
-        shift
-        ;;
-        --p_rowSums=*)
-        p_rowSums="${1#*=}"
+        --P=*)
+        P="${1#*=}"
         shift
         ;;
         --covMx=*)
         covMx="${1#*=}"
-        shift
-        ;;
-        --sample=*)
-        sample="${1#*=}"
         shift
         ;;
         --FASTQS=*)
@@ -46,20 +38,11 @@ while test $# -gt 0;do
         ;;
     esac
 done
-#        --FASTQ1=*)
-#        FASTQ1="${1#*=}"
-#        shift
-#        ;;
-#        --FASTQ2=*)
-#        FASTQ2="${1#*=}"
-#        shift
-#        ;;
 
 echo Print arg values:
 echo scripts: $scripts
 echo KALLISTO_IDX: $KALLISTO_IDX
-echo p_list: $p_list
-echo p_rowSums: $p_rowSums
+echo P: $P
 echo covMx: $covMx
 echo sample: $sample
 echo FASTQS: $FASTQS
@@ -68,14 +51,13 @@ echo OUTPUT_DIR: $OUTPUT_DIR
 echo
 echo "STARTING: " $(date)
 echo
-ls $KALLISTO_IDX  $p_list $p_rowSums $covMx $FASTQ1 $FASTQ2
+ls $KALLISTO_IDX  $P $covMx 
 ls -d $OUTPUT_DIR
 ls -d $scripts
 
 IFS=',' read -ra FASTQS <<< "$FASTQS"
 
 echo FASTQS: ${FASTQS[@]}
-#exit 0
 
 # MPAQT: KALLISTO BUS
 # Runs kallisto's pseudoalignment tool to map reads to equivalence classes. 
@@ -113,4 +95,5 @@ Rscript $scripts/EC_counts_bustools.R --topdir=$OUTPUT_DIR
 
 # MPAQT
 # Runs the MPAQT statistical framework
-Rscript $scripts/MPAQT.R --topdir=$OUTPUT_DIR --p_list=$p_list --p_rowSums=$p_rowSums --covMx=$covMx --sample=$sample --LR_counts=$LR_counts
+echo $P
+Rscript $scripts/MPAQT.R --topdir=$OUTPUT_DIR --p_matrix=$P --covMx=$covMx --LR_counts=$LR_counts 

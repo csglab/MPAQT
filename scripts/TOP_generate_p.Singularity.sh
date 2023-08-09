@@ -8,7 +8,8 @@
 #topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.JULY-20-2023_2
 #topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.FULL.JULY-20-2023
 #topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-1-2023
-topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-1-2023.V2
+#topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-1-2023.V2
+topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-9-2023
 
 mkdir -p $topdir
 mkdir logs
