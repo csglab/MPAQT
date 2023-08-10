@@ -1,5 +1,5 @@
 # This script runs MPAQT
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
 
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
@@ -198,13 +198,13 @@ itelim=100
 # including various statistics, weights, etc
 # Write plain text .tsv files containing only transcript IDs and TPM values
 
-#print("FITTING MPAQT WITH SR DATA ONLY")
-#res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
-#print("SAVING Rds OBJECT")
-#saveRDS(res, file=file.path(topdir, "MPAQT_output.SR.Rds"))
-#MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
-#print("Writing tsv MPAQT output")
-#write.table(MPAQT.SR.df, file=file.path(topdir, "MPAQT_output.SR.tsv"), quote=F, row.names=F, sep = "\t")
+print("FITTING MPAQT WITH SR DATA ONLY")
+res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
+print("SAVING Rds OBJECT")
+saveRDS(res, file=file.path(topdir, "MPAQT_output.SR.Rds"))
+MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
+print("Writing tsv MPAQT output")
+write.table(MPAQT.SR.df, file=file.path(topdir, "MPAQT_output.SR.tsv"), quote=F, row.names=F, sep = "\t")
 
 print("FITTING MPAQT WITH LR + SR DATA")
 res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR.counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )

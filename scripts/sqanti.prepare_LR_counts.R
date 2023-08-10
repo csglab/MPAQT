@@ -1,5 +1,5 @@
 # This script converts SQANTI3 output to generic input suitable for MPAQT 
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
 
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES

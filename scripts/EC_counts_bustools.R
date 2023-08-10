@@ -1,4 +1,4 @@
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
 
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES

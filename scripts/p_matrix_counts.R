@@ -1,8 +1,8 @@
-library(dplyr)
-library(Biostrings)
-library(stringr)
-library(tidyr)
-library(Matrix)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(Biostrings))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(Matrix))
 
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
