@@ -1,18 +1,14 @@
 #!/bin/bash
 
+#######################################################
+# TO SET
+#######################################################
+# INPUT DATA
+
 # Set output directory
-#topdir=/scratch/maposto/pmat.TEST_singularity.JULY-13-2023
-#topdir=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/pmat.TEST_singularity.JULY-19-2023
-#topdir=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/pmat_sing.JULY-19-2023
-#topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.JULY-20-2023
-#topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.JULY-20-2023_2
-#topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.FULL.JULY-20-2023
-#topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-1-2023
-#topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-1-2023.V2
 topdir=/scratch/maposto/TEST_MPAQT/pmat.TEST_singularity.TOY.Aug-9-2023
 
 mkdir -p $topdir
-mkdir logs
 
 ref_txome=/project/6007998/maposto/reference/gencode.v38.transcripts.fa
 KALLISTO_IDX=/project/6007998/maposto/reference/kallisto/gencode.v38.transcripts.fa.idx
@@ -23,8 +19,15 @@ REF=/project/6007998/maposto/reference
 MPAQT=/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT
 SIMG=/project/6007998/maposto/MODULES/MPAQT.V2.simg
 
+cd $MPAQT/scripts
+mkdir logs
+
 test="true"
 #test="false"
+
+#######################################################
+# RUN PIPELINE 
+#######################################################
 
 # TEST MODE --> GENERATE TEST P MATRIX TO CONFIRM CODE WORKS
 if [ "$test" = "true" ]; then
