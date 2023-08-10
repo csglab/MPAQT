@@ -5,12 +5,10 @@ args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
 topdir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 
-#P <- "/project/6007998/maposto/reference/P/p_list.pmat_single.2.4_billion.Oct-15-2021.Rds"
-P <- strsplit(grep('--p_list*', args, value = TRUE), split = '=')[[1]][[2]]
-P <- readRDS(P)
+P <- strsplit(grep('--P', args, value = TRUE), split = '=')[[1]][[2]]
+P <- readRDS(P)[[1]]
 
 sqanti3 <- strsplit(grep('--sqanti3*', args, value = TRUE), split = '=')[[1]][[2]]
-#sqanti3 <- "/project/6007998/maposto/PROJECTS/MPAQT_FINAL/MPAQT/RUNS/MPAQT_test.FULL/SOX10_Day61.rep1.transcriptome.sqanti3_classification.filtered_lite_classification.txt" 
 sqanti_fields <- c("chrom","isoform", "associated_gene", "associated_transcript", "exons", "structural_category", "FL", "subcategory", "CDS_length")
 sqanti3 <- read.csv(file=sqanti3, sep="\t", header=T)[sqanti_fields]
 
