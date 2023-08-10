@@ -1,5 +1,5 @@
 #!/bin/bash
-module load apptainer/1.1.6
+module load apptainer
 
 echo $scripts
 REF=$1

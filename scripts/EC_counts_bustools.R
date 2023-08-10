@@ -1,10 +1,11 @@
+# This script counts the number of reads in each EC
+
 suppressPackageStartupMessages(library(dplyr))
 
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
 dir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 dir <- paste0(dir, "/")
-#dir <- "/home/maposto/scratch/p_mat.novel_MDA-MB-231_dup1.Sept-16-2021/kallisto_quant_bus.SR/" 
 
 print("load in matrix.ec")
 matrix.ec <- read.csv(paste0(dir, "matrix.ec"), header =F, sep="\t")
