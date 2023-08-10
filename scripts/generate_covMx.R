@@ -1,3 +1,6 @@
+# This script generates the covariate matrix, covMx, 
+# which is used as input to MPAQT to account for biases in LR data
+
 suppressPackageStartupMessages(library(Biostrings))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(rtracklayer))

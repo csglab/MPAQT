@@ -44,4 +44,4 @@ true.counts <- simReads(ref_txome,
 	library.size = lib.size,
 	truth.in.read.names = TRUE
 	)
-print(true.counts[1:10,])
+#print(true.counts[1:10,])

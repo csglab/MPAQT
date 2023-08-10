@@ -1,3 +1,5 @@
+# This script combines all replicates into one object
+
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(Biostrings))
 suppressPackageStartupMessages(library(stringr))
