@@ -1,14 +1,14 @@
-library(Biostrings)
-library(dplyr)
-library(rtracklayer)
+suppressPackageStartupMessages(library(Biostrings))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(rtracklayer))
 
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
 dir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 fasta <- strsplit(grep('--fasta*', args, value = TRUE), split = '=')[[1]][[2]]
 gtf <- strsplit(grep('--gtf*', args, value = TRUE), split = '=')[[1]][[2]]
-P <- strsplit(grep('--p_list*', args, value = TRUE), split = '=')[[1]][[2]]
-P <- readRDS(P)
+P <- strsplit(grep('--P', args, value = TRUE), split = '=')[[1]][[2]]
+P <- readRDS(P)[[1]]
 
 print("loading reference fasta")
 fasta <- Biostrings::readDNAStringSet(fasta, format="fasta")
