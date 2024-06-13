@@ -679,7 +679,7 @@ mpaqt_create_project_command() {
   # cli/src/create/project.sh
   mkdir -p ${MPAQT_DIR}/projects/${args[project_id]}
 
-  Rscript load_mpaqt.index.R \
+  Rscript ${SRC}/R/load_mpaqt_index.R \
       --index ${args[--index]} \
       --p_matrix ${MPAQT_DIR}/projects/${args[project_id]}/P.Rds \
       --cov_matrix ${MPAQT_DIR}/projects/${args[project_id]}/covMx.Rds
