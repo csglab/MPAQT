@@ -677,6 +677,7 @@ mpaqt_index_command() {
 # :command.function
 mpaqt_create_project_command() {
   # cli/src/create/project.sh
+  SRC=${MPAQT_DIR}/src
   mkdir -p ${MPAQT_DIR}/projects/${args[project_id]}
 
   Rscript ${SRC}/R/load_mpaqt_index.R \
