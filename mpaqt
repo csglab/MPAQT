@@ -1,0 +1,1751 @@
+#!/usr/bin/env bash
+
+# MPAQT: Multi-Platform Analysis and Quantification of Transcripts
+# Copyright (C) 2024 CSG lab
+# The CSG lab is part of the Department of Human Genetics at McGill University, and is located at the McGill University and Génome Québec Innovation Centre.
+
+# :command.master_script
+
+# :command.version_command
+version_command() {
+  echo "$version"
+}
+
+# :command.usage
+mpaqt_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt - Multi-Platform Analysis and Quantification of Transcripts\n"
+    echo
+
+  else
+    printf "mpaqt - Multi-Platform Analysis and Quantification of Transcripts\n"
+    echo
+
+  fi
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt COMMAND\n"
+  printf "  mpaqt [COMMAND] --help | -h\n"
+  printf "  mpaqt --version | -v\n"
+  echo
+  # :command.usage_commands
+  printf "%s\n" "$(bold "Commands:")"
+  printf "  %s   Create the MPAQT index for a reference transcriptome and its annotation\n" "$(green "index")             "
+  printf "  %s   Create commands for projects or samples\n" "$(green "create")            "
+  printf "  %s   Create a new project\n" "$(green "create project")    "
+  printf "  %s   Create a new sample in a project\n" "$(green "create sample")     "
+  printf "  %s   Prepare commands for short-read and long-read RNA-seq data\n" "$(green "prepare")           "
+  printf "  %s   Prepare short-read RNA-seq data\n" "$(green "prepare short-read")"
+  printf "  %s   Prepare long-read RNA-seq data\n" "$(green "prepare long-read") "
+  printf "  %s   Quantify the expression of transcripts using short-read and long-read RNA-seq data\n" "$(green "quant")             "
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+    printf "  %s\n" "$(magenta "--version, -v")"
+    printf "    Show version number\n"
+    echo
+
+    # :command.usage_environment_variables
+    printf "%s\n" "$(bold "Environment Variables:")"
+
+    # :environment_variable.usage
+    printf "  %s\n" "$(cyan "MPAQT_DIR (required)")"
+    printf "    Working directory for the project\n"
+    echo
+
+    # :command.footer
+    printf "For more information, see the documentation at https://mpaqt.notion.site\n\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+mpaqt_index_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt index - Create the MPAQT index for a reference transcriptome and its annotation\n"
+    echo
+
+  else
+    printf "mpaqt index - Create the MPAQT index for a reference transcriptome and its annotation\n"
+    echo
+
+  fi
+
+  printf "Alias: i\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt index [OPTIONS]\n"
+  printf "  mpaqt index --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--output, -o NAME (required)")"
+    printf "    Output index file\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--ref_txome, -r PATH (required)")"
+    printf "    Reference transcriptome (FASTA)\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--ref_annot, -a PATH (required)")"
+    printf "    Reference annotation (GTF)\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--num_reads, -n NUM")"
+    printf "    Number of reads to generate\n"
+    printf "    Default: 2500000000\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--mode, -m NAME")"
+    printf "    Sequecing mode\n"
+    printf "    Allowed: single, paired\n"
+    printf "    Default: single\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--num_threads, -t NUM")"
+    printf "    Number of threads to use\n"
+    printf "    Default: 1\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--tmp_dir, -d PATH")"
+    printf "    Temporary directory to keep the intermediate files\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+mpaqt_create_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt create - Create commands for projects or samples\n"
+    echo
+
+  else
+    printf "mpaqt create - Create commands for projects or samples\n"
+    echo
+
+  fi
+
+  printf "Alias: c\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt create COMMAND\n"
+  printf "  mpaqt create [COMMAND] --help | -h\n"
+  echo
+  # :command.usage_commands
+  printf "%s\n" "$(bold "Commands:")"
+  printf "  %s   Create a new project\n" "$(green "project")"
+  printf "  %s   Create a new sample in a project\n" "$(green "sample") "
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+mpaqt_create_project_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt create project - Create a new project\n"
+    echo
+
+  else
+    printf "mpaqt create project - Create a new project\n"
+    echo
+
+  fi
+
+  printf "Alias: p\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt create project PROJECT_ID\n"
+  printf "  mpaqt create project --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "$(bold "Arguments:")"
+
+    # :argument.usage
+    printf "  %s\n" "$(blue "PROJECT_ID")"
+    printf "    The project ID\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+mpaqt_create_sample_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt create sample - Create a new sample in a project\n"
+    echo
+
+  else
+    printf "mpaqt create sample - Create a new sample in a project\n"
+    echo
+
+  fi
+
+  printf "Alias: s\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt create sample SAMPLE_ID... [OPTIONS]\n"
+  printf "  mpaqt create sample --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--project, -p ID (required)")"
+    printf "    Project ID\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "$(bold "Arguments:")"
+
+    # :argument.usage
+    printf "  %s\n" "$(blue "SAMPLE_ID...")"
+    printf "    The sample ID\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+mpaqt_prepare_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt prepare - Prepare commands for short-read and long-read RNA-seq data\n"
+    echo
+
+  else
+    printf "mpaqt prepare - Prepare commands for short-read and long-read RNA-seq data\n"
+    echo
+
+  fi
+
+  printf "Alias: p\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt prepare COMMAND\n"
+  printf "  mpaqt prepare [COMMAND] --help | -h\n"
+  echo
+  # :command.usage_commands
+  printf "%s\n" "$(bold "Commands:")"
+  printf "  %s   Prepare short-read RNA-seq data\n" "$(green "short-read")"
+  printf "  %s   Prepare long-read RNA-seq data\n" "$(green "long-read") "
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+mpaqt_prepare_short_read_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt prepare short-read - Prepare short-read RNA-seq data\n"
+    echo
+
+  else
+    printf "mpaqt prepare short-read - Prepare short-read RNA-seq data\n"
+    echo
+
+  fi
+
+  printf "Alias: s\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt prepare short-read [OPTIONS]\n"
+  printf "  mpaqt prepare short-read --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--project, -p ID (required)")"
+    printf "    Project ID\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--sample, -s ID (required)")"
+    printf "    Sample ID\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--bus, -b PATH (required)")"
+    printf "    BUS output of \`kallisto bus\` tool on the short-read FASTQ files (BUS)\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--matrix_ec, -m PATH (required)")"
+    printf "    EC output of \`kallisto bus\` tool on the short-read FASTQ files (EC)\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+mpaqt_prepare_long_read_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt prepare long-read - Prepare long-read RNA-seq data\n"
+    echo
+
+  else
+    printf "mpaqt prepare long-read - Prepare long-read RNA-seq data\n"
+    echo
+
+  fi
+
+  printf "Alias: l\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt prepare long-read [OPTIONS]\n"
+  printf "  mpaqt prepare long-read --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--project, -p ID (required)")"
+    printf "    Project ID\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--sample, -s ID (required)")"
+    printf "    Sample ID\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--counts, -c PATH (required)")"
+    printf "    Long-reads counts file. Should has at least two columns \`transcript_id\` and\n    \`count\`\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+mpaqt_quant_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "mpaqt quant - Quantify the expression of transcripts using short-read and long-read RNA-seq data\n"
+    echo
+
+  else
+    printf "mpaqt quant - Quantify the expression of transcripts using short-read and long-read RNA-seq data\n"
+    echo
+
+  fi
+
+  printf "Alias: q\n"
+  echo
+
+  printf "%s\n" "$(bold "Usage:")"
+  printf "  mpaqt quant [OPTIONS]\n"
+  printf "  mpaqt quant --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--project, -p ID (required)")"
+    printf "    Project ID\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--sample, -s ID (required)")"
+    printf "    Sample ID\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "$(magenta "--help, -h")"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.normalize_input
+# :command.normalize_input_function
+normalize_input() {
+  local arg flags passthru
+  passthru=false
+
+  while [[ $# -gt 0 ]]; do
+    arg="$1"
+    if [[ $passthru == true ]]; then
+      input+=("$arg")
+    elif [[ $arg =~ ^(--[a-zA-Z0-9_\-]+)=(.+)$ ]]; then
+      input+=("${BASH_REMATCH[1]}")
+      input+=("${BASH_REMATCH[2]}")
+    elif [[ $arg =~ ^(-[a-zA-Z0-9])=(.+)$ ]]; then
+      input+=("${BASH_REMATCH[1]}")
+      input+=("${BASH_REMATCH[2]}")
+    elif [[ $arg =~ ^-([a-zA-Z0-9][a-zA-Z0-9]+)$ ]]; then
+      flags="${BASH_REMATCH[1]}"
+      for ((i = 0; i < ${#flags}; i++)); do
+        input+=("-${flags:i:1}")
+      done
+    elif [[ "$arg" == "--" ]]; then
+      passthru=true
+      input+=("$arg")
+    else
+      input+=("$arg")
+    fi
+
+    shift
+  done
+}
+
+# :command.inspect_args
+inspect_args() {
+  if ((${#args[@]})); then
+    readarray -t sorted_keys < <(printf '%s\n' "${!args[@]}" | sort)
+    echo args:
+    for k in "${sorted_keys[@]}"; do
+      echo "- \${args[$k]} = ${args[$k]}"
+    done
+  else
+    echo args: none
+  fi
+
+  if ((${#other_args[@]})); then
+    echo
+    echo other_args:
+    echo "- \${other_args[*]} = ${other_args[*]}"
+    for i in "${!other_args[@]}"; do
+      echo "- \${other_args[$i]} = ${other_args[$i]}"
+    done
+  fi
+
+  if ((${#deps[@]})); then
+    readarray -t sorted_keys < <(printf '%s\n' "${!deps[@]}" | sort)
+    echo
+    echo deps:
+    for k in "${sorted_keys[@]}"; do
+      echo "- \${deps[$k]} = ${deps[$k]}"
+    done
+  fi
+
+  if ((${#env_var_names[@]})); then
+    readarray -t sorted_names < <(printf '%s\n' "${env_var_names[@]}" | sort)
+    echo
+    echo "environment variables:"
+    for k in "${sorted_names[@]}"; do
+      echo "- \$$k = ${!k:-}"
+    done
+  fi
+}
+
+# :command.user_lib
+# cli/lib/colors.sh
+print_in_color() {
+  local color="$1"
+  shift
+  if [[ -z ${NO_COLOR+x} ]]; then
+    printf "$color%b\e[0m\n" "$*"
+  else
+    printf "%b\n" "$*"
+  fi
+}
+
+red() { print_in_color "\e[31m" "$*"; }
+green() { print_in_color "\e[32m" "$*"; }
+yellow() { print_in_color "\e[33m" "$*"; }
+blue() { print_in_color "\e[34m" "$*"; }
+magenta() { print_in_color "\e[35m" "$*"; }
+cyan() { print_in_color "\e[36m" "$*"; }
+bold() { print_in_color "\e[1m" "$*"; }
+underlined() { print_in_color "\e[4m" "$*"; }
+red_bold() { print_in_color "\e[1;31m" "$*"; }
+green_bold() { print_in_color "\e[1;32m" "$*"; }
+yellow_bold() { print_in_color "\e[1;33m" "$*"; }
+blue_bold() { print_in_color "\e[1;34m" "$*"; }
+magenta_bold() { print_in_color "\e[1;35m" "$*"; }
+cyan_bold() { print_in_color "\e[1;36m" "$*"; }
+red_underlined() { print_in_color "\e[4;31m" "$*"; }
+green_underlined() { print_in_color "\e[4;32m" "$*"; }
+yellow_underlined() { print_in_color "\e[4;33m" "$*"; }
+blue_underlined() { print_in_color "\e[4;34m" "$*"; }
+magenta_underlined() { print_in_color "\e[4;35m" "$*"; }
+cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
+
+# cli/lib/validations/validate_dir_exists.sh
+validate_dir_exists() {
+  [[ -d "$1" ]] || echo "must be an existing directory"
+}
+
+# cli/lib/validations/validate_file_exists.sh
+validate_file_exists() {
+  [[ -f "$1" ]] || echo "must be an existing file"
+}
+
+# cli/lib/validations/validate_integer.sh
+validate_integer() {
+  [[ "$1" =~ ^[0-9]+$ ]] || echo "must be an integer"
+}
+
+# cli/lib/validations/validate_not_empty.sh
+validate_not_empty() {
+  [[ -z "$1" ]] && echo "must not be empty"
+}
+
+# :command.command_functions
+# :command.function
+mpaqt_index_command() {
+  # cli/src/index.sh
+  echo "MPAQT: Generating index"
+
+  # Function to display the progress bar
+  show_progress() {
+    local current=$1
+    local total=$2
+    local percent=$((current * 100 / total))
+    local progress=$((percent / 2))
+    local remaining=$((50 - progress))
+
+    printf "\r["
+    for ((i=0; i<progress; i++)); do printf "#"; done
+    for ((i=0; i<remaining; i++)); do printf " "; done
+    printf "] %d%% (%d/%d)" $percent $current $total
+  }
+
+  num_threads=${args[--num_threads]}
+  if [ "$num_threads" -gt "$(nproc)" ]
+  then
+      num_threads=$(nproc)
+      # echo "num_threads is greater than existing threads. Setting num_threads to $num_threads."
+  fi
+
+  output_dir=$(dirname ${args[--output]})
+  output_file=$(basename ${args[--output]})
+  mkdir -p ${output_dir}
+
+  if [ -z ${args[--tmp_dir]} ]; then
+      TMPDIR=${MPAQT_DIR}/tmp/tmp_${RANDOM}
+  else
+      TMPDIR=${args[--tmp_dir]}/tmp/tmp_${RANDOM}
+  fi
+  mkdir -p ${TMPDIR}
+  export TMPDIR=${TMPDIR}
+
+  CWD=${TMPDIR}
+  SRC=${MPAQT_DIR}/src
+
+  ref_txome=$(realpath ${args[--ref_txome]})
+  ref_annot=$(realpath ${args[--ref_annot]})
+
+  kallisto_index="${args[--output]}.kallisto"
+
+  echo "—————— Generating kallisto index for reference transcriptome."
+  kallisto index \
+      --index ${kallisto_index} \
+      --threads ${num_threads} \
+      ${ref_txome} \
+      > /dev/null 2>&1
+
+
+  num_reads=${args[--num_reads]}
+  num_reps=1
+  lib_size=${num_reads}
+
+  if [ "$num_reads" -gt 100000000 ]
+  then
+      num_reps=$((($num_reads + 50000000) / 100000000))
+      lib_size=100000000
+      # echo "num_reads is greater than 100 million. Setting num_reps to $num_reps."
+  fi
+
+  echo "—————— Generating P matrix"
+  for rep in $(seq 1 ${num_reps})
+  do
+      bash ${SRC}/create_pmat_replicate.sh \
+          --rep=${rep} \
+          --topdir=${CWD} \
+          --mode=${args[--mode]} \
+          --ref_txome=${ref_txome} \
+          --KALLISTO_IDX=${kallisto_index} \
+          --scripts=${SRC} \
+          --lib_size=${lib_size} \
+          --num_threads=${num_threads}
+    show_progress $rep $num_reps
+  done
+
+  echo " "
+
+  bash ${SRC}/combine_pmat_replicates.sh \
+      --topdir=${CWD} \
+      --scripts=${SRC} \
+      --reps=${num_reps}
+
+  echo "—————— Generating covariance matrix"
+  Rscript ${SRC}/R/generate_covMx.R \
+      --topdir=${CWD} \
+      --fasta=${ref_txome} \
+      --gtf=${ref_annot} \
+      --P=${CWD}/P.Rds
+
+  echo "—————— Finalizing MPAQT index"
+  Rscript ${SRC}/R/generate_mpaqt_index.R \
+      --p_matrix=${CWD}/P.Rds \
+      --cov_matrix=${CWD}/covMx.Rds \
+      --output="${args[--output]}.mpaqt"
+
+  echo "—————— Index is generated successfully and stored in ${args[--output]}.mpaqt"
+  rm -rf ${TMPDIR}
+
+}
+
+# :command.function
+mpaqt_create_project_command() {
+  # cli/src/create/project.sh
+  mkdir -p ${MPAQT_DIR}/projects/${args[project_id]}
+
+  Rscript load_mpaqt.index.R \
+      --index ${args[--index]} \
+      --p_matrix ${MPAQT_DIR}/projects/${args[project_id]}/P.Rds \
+      --cov_matrix ${MPAQT_DIR}/projects/${args[project_id]}/covMx.Rds
+
+  echo "MPAQT: Project ${args[project_id]} is created, and is stored in ${MPAQT_DIR}/projects/${args[project_id]}."
+
+}
+
+# :command.function
+mpaqt_create_sample_command() {
+  # cli/src/create/sample.sh
+  if [ ! -d ${CWD} ]; then
+      echo "MPAQT ERROR: Project ${args[--project]} does not exist. Please create the project first."
+      exit 1
+  fi
+
+  samples=''
+  eval "samples=(${args[sample_id]:-})"
+
+  for sample in "${samples[@]}"
+  do
+      mkdir -p ${MPAQT_DIR}/projects/${args[--project]}/samples/${sample}
+      echo "MPAQT: Sample ${sample} of project ${args[--project]} has been successfully created in ${MPAQT_DIR}/projects/${args[--project]}/samples/${sample}"
+  done
+}
+
+# :command.function
+mpaqt_prepare_short_read_command() {
+  # cli/src/prepare/short-read.sh
+  echo "MPAQT: Preparing short-read RNA-seq data for sample ${args[--sample]} in project ${args[--project]}"
+
+  CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
+  SRC=${MPAQT_DIR}/src
+
+  if [ ! -d ${MPAQT_DIR}/projects/${args[--project]} ]; then
+      echo "MPAQT ERROR: Project ${args[--project]} does not exist. Please create the project first."
+      exit 1
+  fi
+
+  if [ ! -d ${CWD} ]; then
+      echo "MPAQT ERROR: Sample ${args[--sample]} does not exist. Please create the sample first."
+      exit 1
+  fi
+
+  bus=$(realpath ${args[--bus]})
+  matrix_ec=$(realpath ${args[--matrix_ec]})
+
+  # BUSTOOLS TEXT
+  # Converts the bus file into a text file which is more easily useable
+  echo "MPAQT: Converting bus file to text file"
+  bustools text -f -o ${CWD}/output.bus.txt ${bus}
+  cp ${matrix_ec} ${CWD}/matrix.ec
+
+  # EC COUNTS:
+
+  # counts the number of reads in each EC, and outputs this data into a
+
+  # format compatible with input to MPAQT.R
+  # Outputs file reads.ecs.counts.Rds
+
+  echo "MPAQT: Counting reads in each EC"
+  Rscript ${SRC}/R/EC_counts_bustools.R --topdir=${CWD}
+
+}
+
+# :command.function
+mpaqt_prepare_long_read_command() {
+  # cli/src/prepare/long-read.sh
+  echo "MPAQT: Preparing long-read RNA-seq data for sample ${args[--sample]} in project ${args[--project]}"
+
+  CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
+  SRC=${MPAQT_DIR}/src
+
+  if [ ! -d ${MPAQT_DIR}/projects/${args[--project]} ]; then
+      echo "MPAQT ERROR: Project ${args[--project]} does not exist. Please create the project first."
+      exit 1
+  fi
+
+  if [ ! -d ${CWD} ]; then
+      echo "MPAQT ERROR: Sample ${args[--sample]} does not exist. Please create the sample first."
+      exit 1
+  fi
+
+  counts=$(realpath ${args[--counts]})
+
+  Rscript ${SRC}/R/prepare_lr_counts.R \
+      --topdir ${CWD} \
+      --p_matrix ${MPAQT_DIR}/projects/${args[--project]}/P.Rds \
+      --lr_counts ${counts}
+
+}
+
+# :command.function
+mpaqt_quant_command() {
+  # cli/src/quant.sh
+  echo "MPAQT: Quantifying transcript expressions for sample `${args[--sample]}` in project `${args[--project]}`"
+
+  CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
+  SRC=${MPAQT_DIR}/src
+
+  if [ ! -d ${MPAQT_DIR}/projects/${args[--project]} ]; then
+      echo "MPAQT ERROR: Project ${args[--project]} does not exist. Please create the project first."
+      exit 1
+  fi
+
+  if [ ! -d ${CWD} ]; then
+      echo "MPAQT ERROR: Sample ${args[--sample]} does not exist. Please create the sample first."
+      exit 1
+  fi
+
+  if [ ! -f ${CWD}/reads.ecs.counts.Rds ]; then
+      echo "MPAQT ERROR: Please prepare short-read RNA-seq data first."
+      exit 1
+  fi
+
+  if [ ! -f ${CWD}/LR.counts.Rds ]; then
+      echo "MPAQT ERROR: Please prepare long-read RNA-seq data first."
+      exit 1
+  fi
+
+  # Runs the MPAQT statistical framework
+  echo MPAQT: Running the MPAQT statistical framework
+  Rscript ${SRC}/R/MPAQT.R \
+      --topdir=${CWD} \
+      --p_matrix=${MPAQT_DIR}/projects/${args[--project]}/P.Rds \
+      --covMx=${MPAQT_DIR}/projects/${args[--project]}/covMx.Rds \
+      --LR_counts=${CWD}/LR.counts.Rds
+
+}
+
+# :command.parse_requirements
+parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --version | -v)
+        version_command
+        exit
+        ;;
+
+      --help | -h)
+        long_usage=yes
+        mpaqt_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.environment_variables_filter
+
+  env_var_names+=("MPAQT_DIR")
+  if [[ -z "${MPAQT_DIR:-}" ]]; then
+    printf "missing required environment variable: MPAQT_DIR\n" >&2
+    exit 1
+  fi
+
+  # :command.command_filter
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    index | i)
+      action="index"
+      shift
+      mpaqt_index_parse_requirements "$@"
+      shift $#
+      ;;
+
+    create | c)
+      action="create"
+      shift
+      mpaqt_create_parse_requirements "$@"
+      shift $#
+      ;;
+
+    prepare | p)
+      action="prepare"
+      shift
+      mpaqt_prepare_parse_requirements "$@"
+      shift $#
+      ;;
+
+    quant | q)
+      action="quant"
+      shift
+      mpaqt_quant_parse_requirements "$@"
+      shift $#
+      ;;
+
+    # :command.command_fallback
+    "")
+      mpaqt_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+mpaqt_index_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        mpaqt_index_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.dependencies_filter
+  if command -v bash >/dev/null 2>&1; then
+    deps['bash']="$(command -v bash | head -n1)"
+  else
+    printf "missing dependency: bash\n" >&2
+    exit 1
+  fi
+
+  if command -v kallisto >/dev/null 2>&1; then
+    deps['kallisto']="$(command -v kallisto | head -n1)"
+  else
+    printf "missing dependency: kallisto\n" >&2
+    exit 1
+  fi
+
+  # :command.command_filter
+  action="index"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      # :flag.case
+      --output | -o)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--output']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--output requires an argument: --output, -o NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --ref_txome | -r)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--ref_txome']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--ref_txome requires an argument: --ref_txome, -r PATH" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --ref_annot | -a)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--ref_annot']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--ref_annot requires an argument: --ref_annot, -a PATH" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --num_reads | -n)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--num_reads']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--num_reads requires an argument: --num_reads, -n NUM" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --mode | -m)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--mode']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--mode requires an argument: --mode, -m NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --num_threads | -t)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--num_threads']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--num_threads requires an argument: --num_threads, -t NUM" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --tmp_dir | -d)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--tmp_dir']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--tmp_dir requires an argument: --tmp_dir, -d PATH" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_flags_filter
+  if [[ -z ${args['--output']+x} ]]; then
+    printf "missing required flag: --output, -o NAME\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--ref_txome']+x} ]]; then
+    printf "missing required flag: --ref_txome, -r PATH\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--ref_annot']+x} ]]; then
+    printf "missing required flag: --ref_annot, -a PATH\n" >&2
+    exit 1
+  fi
+
+  # :command.default_assignments
+  [[ -n ${args['--num_reads']:-} ]] || args['--num_reads']="2500000000"
+  [[ -n ${args['--mode']:-} ]] || args['--mode']="single"
+  [[ -n ${args['--num_threads']:-} ]] || args['--num_threads']="1"
+
+  # :command.validations
+  # :flag.validations
+  if [[ -v args['--ref_txome'] && -n $(validate_file_exists "${args['--ref_txome']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "--ref_txome, -r PATH" "$(validate_file_exists "${args['--ref_txome']:-}")" >&2
+    exit 1
+  fi
+
+  # :flag.validations
+  if [[ -v args['--ref_annot'] && -n $(validate_file_exists "${args['--ref_annot']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "--ref_annot, -a PATH" "$(validate_file_exists "${args['--ref_annot']:-}")" >&2
+    exit 1
+  fi
+
+  # :flag.validations
+  if [[ -v args['--num_reads'] && -n $(validate_integer "${args['--num_reads']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "--num_reads, -n NUM" "$(validate_integer "${args['--num_reads']:-}")" >&2
+    exit 1
+  fi
+
+  # :flag.validations
+  if [[ -v args['--num_threads'] && -n $(validate_integer "${args['--num_threads']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "--num_threads, -t NUM" "$(validate_integer "${args['--num_threads']:-}")" >&2
+    exit 1
+  fi
+
+  # :command.whitelist_filter
+  if [[ ${args['--mode']:-} ]] && [[ ! ${args['--mode']:-} =~ ^(single|paired)$ ]]; then
+    printf "%s\n" "--mode must be one of: single, paired" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+mpaqt_create_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        mpaqt_create_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    project | p)
+      action="project"
+      shift
+      mpaqt_create_project_parse_requirements "$@"
+      shift $#
+      ;;
+
+    sample | s)
+      action="sample"
+      shift
+      mpaqt_create_sample_parse_requirements "$@"
+      shift $#
+      ;;
+
+    # :command.command_fallback
+    "")
+      mpaqt_create_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+mpaqt_create_project_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        mpaqt_create_project_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="create project"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        # :argument.case
+        if [[ -z ${args['project_id']+x} ]]; then
+          args['project_id']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['project_id']+x} ]]; then
+    printf "missing required argument: PROJECT_ID\nusage: mpaqt create project PROJECT_ID\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+mpaqt_create_sample_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        mpaqt_create_sample_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="create sample"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      # :flag.case
+      --project | -p)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--project']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--project requires an argument: --project, -p ID" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_repeatable
+        # :argument.case_repeatable
+        escaped="$(printf '%q' "$1")"
+        if [[ -z ${args['sample_id']+x} ]]; then
+          args['sample_id']="$escaped"
+          unique_lookup["sample_id:$escaped"]=1
+        elif [[ -z "${unique_lookup["sample_id:$escaped"]:-}" ]]; then
+          args['sample_id']="${args['sample_id']} $escaped"
+          unique_lookup["sample_id:$escaped"]=1
+
+        fi
+        shift
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['sample_id']+x} ]]; then
+    printf "missing required argument: SAMPLE_ID\nusage: mpaqt create sample SAMPLE_ID... [OPTIONS]\n" >&2
+    exit 1
+  fi
+
+  # :command.required_flags_filter
+  if [[ -z ${args['--project']+x} ]]; then
+    printf "missing required flag: --project, -p ID\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+mpaqt_prepare_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        mpaqt_prepare_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    short-read | s)
+      action="short-read"
+      shift
+      mpaqt_prepare_short_read_parse_requirements "$@"
+      shift $#
+      ;;
+
+    long-read | l)
+      action="long-read"
+      shift
+      mpaqt_prepare_long_read_parse_requirements "$@"
+      shift $#
+      ;;
+
+    # :command.command_fallback
+    "")
+      mpaqt_prepare_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+mpaqt_prepare_short_read_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        mpaqt_prepare_short_read_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="prepare short-read"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      # :flag.case
+      --project | -p)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--project']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--project requires an argument: --project, -p ID" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --sample | -s)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--sample']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--sample requires an argument: --sample, -s ID" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --bus | -b)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--bus']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--bus requires an argument: --bus, -b PATH" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --matrix_ec | -m)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--matrix_ec']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--matrix_ec requires an argument: --matrix_ec, -m PATH" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_flags_filter
+  if [[ -z ${args['--project']+x} ]]; then
+    printf "missing required flag: --project, -p ID\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--sample']+x} ]]; then
+    printf "missing required flag: --sample, -s ID\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--bus']+x} ]]; then
+    printf "missing required flag: --bus, -b PATH\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--matrix_ec']+x} ]]; then
+    printf "missing required flag: --matrix_ec, -m PATH\n" >&2
+    exit 1
+  fi
+
+  # :command.validations
+  # :flag.validations
+  if [[ -v args['--bus'] && -n $(validate_file_exists "${args['--bus']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "--bus, -b PATH" "$(validate_file_exists "${args['--bus']:-}")" >&2
+    exit 1
+  fi
+
+  # :flag.validations
+  if [[ -v args['--matrix_ec'] && -n $(validate_file_exists "${args['--matrix_ec']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "--matrix_ec, -m PATH" "$(validate_file_exists "${args['--matrix_ec']:-}")" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+mpaqt_prepare_long_read_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        mpaqt_prepare_long_read_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="prepare long-read"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      # :flag.case
+      --project | -p)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--project']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--project requires an argument: --project, -p ID" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --sample | -s)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--sample']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--sample requires an argument: --sample, -s ID" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --counts | -c)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--counts']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--counts requires an argument: --counts, -c PATH" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_flags_filter
+  if [[ -z ${args['--project']+x} ]]; then
+    printf "missing required flag: --project, -p ID\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--sample']+x} ]]; then
+    printf "missing required flag: --sample, -s ID\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--counts']+x} ]]; then
+    printf "missing required flag: --counts, -c PATH\n" >&2
+    exit 1
+  fi
+
+  # :command.validations
+  # :flag.validations
+  if [[ -v args['--counts'] && -n $(validate_file_exists "${args['--counts']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "--counts, -c PATH" "$(validate_file_exists "${args['--counts']:-}")" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+mpaqt_quant_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        mpaqt_quant_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="quant"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      # :flag.case
+      --project | -p)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--project']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--project requires an argument: --project, -p ID" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --sample | -s)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--sample']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--sample requires an argument: --sample, -s ID" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_flags_filter
+  if [[ -z ${args['--project']+x} ]]; then
+    printf "missing required flag: --project, -p ID\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--sample']+x} ]]; then
+    printf "missing required flag: --sample, -s ID\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.initialize
+initialize() {
+  version="0.2.0"
+  long_usage=''
+  set -eo pipefail
+
+}
+
+# :command.run
+run() {
+  declare -A args=()
+  declare -A deps=()
+  declare -a other_args=()
+  declare -a env_var_names=()
+  declare -a input=()
+  declare -A unique_lookup=()
+  normalize_input "$@"
+  parse_requirements "${input[@]}"
+
+  case "$action" in
+    "index") mpaqt_index_command ;;
+    "create") mpaqt_create_command ;;
+    "create project") mpaqt_create_project_command ;;
+    "create sample") mpaqt_create_sample_command ;;
+    "prepare") mpaqt_prepare_command ;;
+    "prepare short-read") mpaqt_prepare_short_read_command ;;
+    "prepare long-read") mpaqt_prepare_long_read_command ;;
+    "quant") mpaqt_quant_command ;;
+  esac
+}
+
+initialize
+run "$@"
