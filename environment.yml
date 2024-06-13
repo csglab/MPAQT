@@ -1,0 +1,19 @@
+name: mpaqt
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - r-base=4.3.3
+  - r-data.table=1.15.4
+  - r-dplyr=1.1.4
+  - r-tidyr=1.3.1
+  - r-stringr=1.5.1
+  - r-magrittr=2.0.3
+  - r-matrix=1.6_5
+  - r-optparse=1.7.5
+  - bioconductor-rtracklayer=1.62.0
+  - bioconductor-biostrings=2.70.1
+  - bioconductor-rsubread=2.16.1
+  - kallisto=0.50.1
+  - bustools=0.43.2
