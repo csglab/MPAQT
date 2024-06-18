@@ -24,7 +24,7 @@ mpaqt index \
 	--ref_txome references/gencode.v46.transcripts.fa.gz \
 	--ref_annot references/gencode.v46.annotation.gtf.gz \
 	--output references/gencode.v46.index \
-    --threads 32
+    	--threads 32
 
 # ── mpaqt
 # ── references
@@ -55,7 +55,7 @@ mpaqt create project \
 
 mpaqt create sample \
 	--project ${project} \
-    ${samples[*]}
+    	${samples[*]}
 
 # ── mpaqt
 # ── references
