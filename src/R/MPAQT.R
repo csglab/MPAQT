@@ -1,21 +1,28 @@
 # This script runs MPAQT
-suppressPackageStartupMessages(library(dplyr))
+library(magrittr)
+shhh = suppressPackageStartupMessages
+library(optparse) %>% shhh()
+library(dplyr) %>% shhh()
+library(stringr) %>% shhh()
 
-args = commandArgs(trailingOnly=TRUE)
-#INPUT/OUTPUT FILES
-topdir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
-P <- strsplit(grep('--p_matrix*', args, value = TRUE), split = '=')[[1]][[2]]
-P <- readRDS(P)
+option_list <- list(
+  make_option(c("--topdir"), type="character", default=NULL, help="Top directory path"),
+  make_option(c("--sample"), type="character", default=NULL, help="Path to sample file (RDS or other format)"),
+  make_option(c("--p_matrix"), type="character", default=NULL, help="Path to P matrix (RDS file)"),
+  make_option(c("--covMx"), type="character", default=NULL, help="Path to covariance matrix (RDS file)"),
+  make_option(c("--LR_counts"), type="character", default=NULL, help="Path to LR counts (RDS file)")
+)
+args <- parse_args(OptionParser(option_list=option_list))
+
+topdir <- args$topdir
+sample <- args$sample
+
+P <- readRDS(args$p_matrix)
 n <- P[[2]]
 P <- P[[1]]
 
-covMx <- strsplit(grep('--covMx*', args, value = TRUE), split = '=')[[1]][[2]]
-covMx <- readRDS(covMx)
-
-#sample <- strsplit(grep('--sample*', args, value = TRUE), split = '=')[[1]][[2]] 
-
-LR.counts <- strsplit(grep('--LR_counts*', args, value = TRUE), split = '=')[[1]][[2]]
-LR.counts <- readRDS(LR.counts)
+covMx <- readRDS(args$covMx)
+LR_counts <- readRDS(args$LR_counts)
 
 #### Function for fitting transcript abundances
 # P: The matrix P for the type 1 reads (i.e., short RNA-seq read type), in the
@@ -43,6 +50,8 @@ fit_model.v9.better_convergence <- function( P, n, n2=rep(0,length(P)), covMx=re
   y <- rep(0,length(n))
 
   n2_sum <- sum(n2)
+  input_type = ifelse(n2_sum > 0, 'LR+SR Data', 'SR Data')
+  input_type = str_pad(input_type, nchar('LR+SR Data'), 'right')
 
   ######## The code for coordinate descent optimization
 
@@ -53,7 +62,7 @@ fit_model.v9.better_convergence <- function( P, n, n2=rep(0,length(P)), covMx=re
   mu <- 0
   for( ite in 1:itelim )
   {
-    cat("Iteration",ite,"...\n")
+    # cat("Iteration",ite,"...\n")
     overshoot <- 0
     undershoot <- 0
 
@@ -139,12 +148,15 @@ fit_model.v9.better_convergence <- function( P, n, n2=rep(0,length(P)), covMx=re
     }
 
     dLL <- LL - prev_LL # How much has it improved since the last round?
-    cat("Log-Likelihood:",LL,"; dLL:",dLL,"; sigma2:", sigma2,"; mu:", mu, "; undershoot:", undershoot, "; overshoot:", overshoot, "\n")
+    # cat("Log-Likelihood:",LL,"; dLL:",dLL,"; sigma2:", sigma2,"; mu:", mu, "; undershoot:", undershoot, "; overshoot:", overshoot, "\n")
+    cat(sprintf("\r——————————— %s | Iteration %d/%d | Log-Likelihood: %.4f; dLL: %.4f; sigma2: %.4f; mu: %.4f; undershoot: %.4f; overshoot: %.4f |",
+                input_type, ite, itelim, LL, dLL, sigma2, mu, undershoot, overshoot))    
+    flush.console()
 
     if(ite==2) { ref_dLL <- dLL } # If this is the second iteration, this dLL will be used as reference for evaluating convergence
     if( !is.na(dLL) & !is.na(ref_dLL) ) {
       if( dLL >0 & dLL < ref_dLL*tol ) {
-        cat("Model converged.\n")
+        cat(" Model converged.\n")
         converged <- T
         break
       }
@@ -153,7 +165,8 @@ fit_model.v9.better_convergence <- function( P, n, n2=rep(0,length(P)), covMx=re
   }
 
   if( !converged ) {
-    warning("Model did not converge.")
+    # warning("Model did not converge.")
+    cat(" Model did not converge.\n")
   }
 
   names(beta) <- names(P)
@@ -172,7 +185,7 @@ fit_model.v9.better_convergence <- function( P, n, n2=rep(0,length(P)), covMx=re
 }
 
 # PREPARE SR DATA
-print("PREPARE SR DATA")
+# print("PREPARE SR DATA")
 # Read in reads.ecs.counts
 reads.ecs.counts <- readRDS(file.path(topdir, "reads.ecs.counts.Rds"))
 
@@ -193,24 +206,36 @@ n_sample <- n_sample[names(n)]
 tol=1e-10
 itelim=100
 
+dir.create(file.path(topdir, "quant"), showWarnings = FALSE)
+
+
 # Run MPAQT
 # Save MPAQT output as Rds objects containing all output of the MPAQT model
 # including various statistics, weights, etc
 # Write plain text .tsv files containing only transcript IDs and TPM values
 
-print("FITTING MPAQT WITH SR DATA ONLY")
-res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
-print("SAVING Rds OBJECT")
-saveRDS(res, file=file.path(topdir, "MPAQT_output.SR.Rds"))
+# print("FITTING MPAQT WITH SR DATA ONLY")
+# res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
+suppressWarnings({
+  res <- fit_model.v9.better_convergence( P, n_sample, prior=T, tol=tol, itelim=itelim )
+})
+
+# print("SAVING Rds OBJECT")
+saveRDS(res, str_glue("{topdir}/{sample}.sr.mpaqt"))
+
+# print("Writing tsv MPAQT output")
 MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
-print("Writing tsv MPAQT output")
-write.table(MPAQT.SR.df, file=file.path(topdir, "MPAQT_output.SR.tsv"), quote=F, row.names=F, sep = "\t")
+write.table(MPAQT.SR.df, file=str_glue("{topdir}/quant/{sample}.MPAQT.SR.tsv"), quote=F, row.names=F, sep = "\t")
 
-print("FITTING MPAQT WITH LR + SR DATA")
-res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR.counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
-print("SAVING Rds OBJECT")
-saveRDS(res2, file=file.path(topdir, "MPAQT_output.LR_SR.Rds"))
-print("Writing tsv MPAQT output")
+# print("FITTING MPAQT WITH LR + SR DATA")
+# res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR.counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
+suppressWarnings({
+  res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR_counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
+})
+
+# print("SAVING Rds OBJECT")
+saveRDS(res2, str_glue("{topdir}/{sample}.lr_sr.mpaqt"))
+
+# print("Writing tsv MPAQT output")
 MPAQT.LR.df <- data.frame(transcript_id=names(res2$tpm), TPM=res2$tpm)
-write.table(MPAQT.LR.df, file=file.path(topdir, "MPAQT_output.LR_SR.tsv") ,quote=F, row.names=F, sep = "\t")
-
+write.table(MPAQT.LR.df, file=str_glue("{topdir}/quant/{sample}.MPAQT.LR_SR.tsv"), quote=F, row.names=F, sep = "\t")
