@@ -19,7 +19,7 @@ bus$read_id <- as.character(bus$read_id)
 
 # print("Count number of reads in each EC")
 # Count number of reads in each EC
-reads.ecs.joined <- inner_join(bus, matrix.ec)[c("read_id", "txs")]
+reads.ecs.joined <- inner_join(bus, matrix.ec, by = 'ec')[c("read_id", "txs")]
 reads.ecs.counts <- reads.ecs.joined %>% dplyr::group_by(txs) %>%
   dplyr::count(txs)
 

@@ -18,7 +18,7 @@
 #   ./script.sh --reps=24 --topdir=/path/to/output --scripts=/path/to/scripts
 
 # Initialize variables with default values
-reps=24
+reps=25
 topdir=""
 scripts=""
 
@@ -62,21 +62,21 @@ fi
 
 # COMBINE REPLICATES
 # Combines the specified number of replicates into a single object
-echo "==== Step 1: Combining replicate counts"
+# echo "==== Step 1: Combining replicate counts"
 # echo "Top directory: $topdir"
 # echo "Number of replicates: $reps"
 # echo "Scripts directory: $scripts"
-Rscript $scripts/R/combine_replicate_counts.R --topdir=$topdir --reps=$reps
-echo "Combining replicates complete"
+Rscript $scripts/R/combine_replicate_counts.R --topdir=${topdir} --reps=$reps
+# echo "Combining replicates complete"
 
 # GENERATE P
 # Generates matrix P as a sparse matrix
 # Outputs file p_matrix.Rds
-echo "==== Step 2: Generating P matrix"
-Rscript $scripts/R/generate_p_matrix.R --topdir=$topdir --reps=$reps
-echo "P matrix generation complete"
+# echo "==== Step 2: Generating P matrix"
+Rscript $scripts/R/generate_p_matrix.R --topdir=${topdir} --reps=$reps
+# echo "P matrix generation complete"
 
 # Generates files p_rowSums.Rds and p_list.Rds, which are used as input to MPAQT
-echo "==== Step 3: Converting P matrix to list"
-Rscript $scripts/R/01.convert_to_list.R --topdir=$topdir
-echo "P matrix conversion complete"
+# echo "==== Step 3: Converting P matrix to list"
+Rscript $scripts/R/01.convert_to_list.R --topdir=${topdir}
+# echo "P matrix conversion complete"

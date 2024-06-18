@@ -1,15 +1,19 @@
 # This script converts the P matrix from dgTMatrix format to a different format that allows quick access to non-zero entries of each column during model fitting
+
+suppressPackageStartupMessages(library(Matrix))
+
 args = commandArgs(trailingOnly=TRUE)
 #INPUT/OUTPUT FILES
 topdir <- strsplit(grep('--topdir*', args, value = TRUE), split = '=')[[1]][[2]]
 topdir <- paste0(topdir, "/")
 
 P <- readRDS(paste0(topdir, "p_matrix.Rds"))
-P <- as(P,"dgCMatrix")
+# P <- as(P,"dgCMatrix")
+P <- as(P, "CsparseMatrix")
 
 #dim(P)
 
-sum( colSums(P) == 0 ) # there are 3072 transcripts with zero colSums. Looking at a few of them, they seem to be mostly miRNAs, which are probably too shot to produce any reads
+# sum( colSums(P) == 0 ) # there are 3072 transcripts with zero colSums. Looking at a few of them, they seem to be mostly miRNAs, which are probably too shot to produce any reads
 
 # Remove transcripts with zero colSums
 P <- P[ , which( colSums(P) != 0 ) ]

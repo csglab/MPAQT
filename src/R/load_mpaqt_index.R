@@ -31,4 +31,4 @@ saveRDS(p_matrix, args$p_matrix)
 saveRDS(cov_matrix, args$cov_matrix)
 
 # Print a success message
-cat("Matrices successfully saved as separate RDS files\n")
+# cat("Matrices successfully saved as separate RDS files\n")

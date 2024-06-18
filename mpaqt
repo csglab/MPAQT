@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# MPAQT: Multi-Platform Analysis and Quantification of Transcripts
+# MPAQT ————— Multi-Platform Analysis and Quantification of Transcripts
 # Copyright (C) 2024 CSG lab
 # The CSG lab is part of the Department of Human Genetics at McGill University, and is located at the McGill University and Génome Québec Innovation Centre.
 
@@ -192,13 +192,19 @@ mpaqt_create_project_usage() {
   echo
 
   printf "%s\n" "$(bold "Usage:")"
-  printf "  mpaqt create project PROJECT_ID\n"
+  printf "  mpaqt create project PROJECT_ID [OPTIONS]\n"
   printf "  mpaqt create project --help | -h\n"
   echo
 
   # :command.long_usage
   if [[ -n $long_usage ]]; then
     printf "%s\n" "$(bold "Options:")"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "$(magenta "--index, -i PATH (required)")"
+    printf "    MPAQT index file\n"
+    echo
 
     # :command.usage_fixed_flags
     printf "  %s\n" "$(magenta "--help, -h")"
@@ -572,31 +578,22 @@ validate_not_empty() {
 # :command.function
 mpaqt_index_command() {
   # cli/src/index.sh
-  echo "MPAQT: Generating index"
+  echo "MPAQT ————— Generating index"
 
-  # Function to display the progress bar
-  show_progress() {
-    local current=$1
-    local total=$2
-    local percent=$((current * 100 / total))
-    local progress=$((percent / 2))
-    local remaining=$((50 - progress))
-
-    printf "\r["
-    for ((i=0; i<progress; i++)); do printf "#"; done
-    for ((i=0; i<remaining; i++)); do printf " "; done
-    printf "] %d%% (%d/%d)" $percent $current $total
-  }
-
+  ### Threads
   num_threads=${args[--num_threads]}
-  if [ "$num_threads" -gt "$(nproc)" ]
-  then
-      num_threads=$(nproc)
-      # echo "num_threads is greater than existing threads. Setting num_threads to $num_threads."
+  max_threads=13
+
+  if [ "$num_threads" -gt "${max_threads}" ]; then
+    mpaqt_threads=${max_threads}
+    kallisto_threads=$((num_threads / max_threads))
+  else
+    mpaqt_threads=${num_threads}
+    kallisto_threads=1
   fi
 
+  ### Intermediate and final directories
   output_dir=$(dirname ${args[--output]})
-  output_file=$(basename ${args[--output]})
   mkdir -p ${output_dir}
 
   if [ -z ${args[--tmp_dir]} ]; then
@@ -604,72 +601,71 @@ mpaqt_index_command() {
   else
       TMPDIR=${args[--tmp_dir]}/tmp/tmp_${RANDOM}
   fi
-  mkdir -p ${TMPDIR}
-  export TMPDIR=${TMPDIR}
 
   CWD=${TMPDIR}
+  mkdir -p ${CWD} ${CWD}/p-matrix ${CWD}/cov-matrix
+  export TMPDIR=${CWD}
+
+  ### Input directories and files
   SRC=${MPAQT_DIR}/src
 
   ref_txome=$(realpath ${args[--ref_txome]})
   ref_annot=$(realpath ${args[--ref_annot]})
 
   kallisto_index="${args[--output]}.kallisto"
+  kallisto_index=$(realpath ${kallisto_index})
 
-  echo "—————— Generating kallisto index for reference transcriptome."
+  echo "——————————— Generating kallisto index for reference transcriptome."
   kallisto index \
       --index ${kallisto_index} \
       --threads ${num_threads} \
       ${ref_txome} \
       > /dev/null 2>&1
 
-
   num_reads=${args[--num_reads]}
-  num_reps=1
+  num_reps=25
   lib_size=${num_reads}
+  max_lib_size=100000000
+  half_max_lib_size=$((max_lib_size / 2))
 
-  if [ "$num_reads" -gt 100000000 ]
+  if [ "$num_reads" -gt "$max_lib_size" ]
   then
-      num_reps=$((($num_reads + 50000000) / 100000000))
-      lib_size=100000000
+      num_reps=$((($num_reads + $half_max_lib_size) / $max_lib_size))
+      lib_size=${max_lib_size}
       # echo "num_reads is greater than 100 million. Setting num_reps to $num_reps."
   fi
 
-  echo "—————— Generating P matrix"
-  for rep in $(seq 1 ${num_reps})
-  do
-      bash ${SRC}/create_pmat_replicate.sh \
-          --rep=${rep} \
-          --topdir=${CWD} \
-          --mode=${args[--mode]} \
-          --ref_txome=${ref_txome} \
-          --KALLISTO_IDX=${kallisto_index} \
-          --scripts=${SRC} \
-          --lib_size=${lib_size} \
-          --num_threads=${num_threads}
-    show_progress $rep $num_reps
-  done
-
-  echo " "
+  echo "——————————— Generating P matrix"
+  seq 1 ${num_reps} | xargs -I{} -P${mpaqt_threads} bash -c "
+    bash ${SRC}/create_pmat_replicate.sh \
+      --rep={} \
+      --topdir=${CWD}/p-matrix \
+      --mode=${args[--mode]} \
+      --ref_txome=${ref_txome} \
+      --KALLISTO_IDX=${kallisto_index} \
+      --scripts=${SRC} \
+      --lib_size=${lib_size} \
+      --kallisto_num_threads=${kallisto_threads}"
 
   bash ${SRC}/combine_pmat_replicates.sh \
-      --topdir=${CWD} \
+      --topdir=${CWD}/p-matrix \
       --scripts=${SRC} \
       --reps=${num_reps}
 
-  echo "—————— Generating covariance matrix"
+  echo "——————————— Generating covariance matrix"
   Rscript ${SRC}/R/generate_covMx.R \
-      --topdir=${CWD} \
+      --topdir=${CWD}/cov-matrix \
       --fasta=${ref_txome} \
       --gtf=${ref_annot} \
-      --P=${CWD}/P.Rds
+      --P=${CWD}/p-matrix/P.Rds
 
-  echo "—————— Finalizing MPAQT index"
+  echo "——————————— Finalizing MPAQT index"
   Rscript ${SRC}/R/generate_mpaqt_index.R \
-      --p_matrix=${CWD}/P.Rds \
-      --cov_matrix=${CWD}/covMx.Rds \
+      --p_matrix=${CWD}/p-matrix/P.Rds \
+      --cov_matrix=${CWD}/cov-matrix/covMx.Rds \
       --output="${args[--output]}.mpaqt"
 
-  echo "—————— Index is generated successfully and stored in ${args[--output]}.mpaqt"
+  echo "——————————— Index has been generated successfully and stored in ${args[--output]}.mpaqt"
   rm -rf ${TMPDIR}
 
 }
@@ -678,6 +674,8 @@ mpaqt_index_command() {
 mpaqt_create_project_command() {
   # cli/src/create/project.sh
   SRC=${MPAQT_DIR}/src
+
+  echo 'MPAQT ————— Creating project'
   mkdir -p ${MPAQT_DIR}/projects/${args[project_id]}
 
   Rscript ${SRC}/R/load_mpaqt_index.R \
@@ -685,7 +683,7 @@ mpaqt_create_project_command() {
       --p_matrix ${MPAQT_DIR}/projects/${args[project_id]}/P.Rds \
       --cov_matrix ${MPAQT_DIR}/projects/${args[project_id]}/covMx.Rds
 
-  echo "MPAQT: Project ${args[project_id]} is created, and is stored in ${MPAQT_DIR}/projects/${args[project_id]}."
+  echo "——————————— Project ${args[project_id]} has been created in ${MPAQT_DIR}/projects/${args[project_id]}"
 
 }
 
@@ -697,20 +695,21 @@ mpaqt_create_sample_command() {
       exit 1
   fi
 
+  echo 'MPAQT ————— Creating samples'
   samples=''
   eval "samples=(${args[sample_id]:-})"
 
   for sample in "${samples[@]}"
   do
       mkdir -p ${MPAQT_DIR}/projects/${args[--project]}/samples/${sample}
-      echo "MPAQT: Sample ${sample} of project ${args[--project]} has been successfully created in ${MPAQT_DIR}/projects/${args[--project]}/samples/${sample}"
+      echo "——————————— Sample ${sample} of project ${args[--project]} has been successfully created in ${MPAQT_DIR}/projects/${args[--project]}/samples/${sample}"
   done
 }
 
 # :command.function
 mpaqt_prepare_short_read_command() {
   # cli/src/prepare/short-read.sh
-  echo "MPAQT: Preparing short-read RNA-seq data for sample ${args[--sample]} in project ${args[--project]}"
+  echo "MPAQT ————— Preparing short-read RNA-seq data for sample ${args[--sample]} in project ${args[--project]}"
 
   CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
   SRC=${MPAQT_DIR}/src
@@ -730,8 +729,8 @@ mpaqt_prepare_short_read_command() {
 
   # BUSTOOLS TEXT
   # Converts the bus file into a text file which is more easily useable
-  echo "MPAQT: Converting bus file to text file"
-  bustools text -f -o ${CWD}/output.bus.txt ${bus}
+  # echo "MPAQT ————— Converting bus file to text file"
+  bustools text -f -o ${CWD}/output.bus.txt ${bus} > /dev/null 2>&1
   cp ${matrix_ec} ${CWD}/matrix.ec
 
   # EC COUNTS:
@@ -741,15 +740,18 @@ mpaqt_prepare_short_read_command() {
   # format compatible with input to MPAQT.R
   # Outputs file reads.ecs.counts.Rds
 
-  echo "MPAQT: Counting reads in each EC"
+  # echo "MPAQT ————— Counting reads in each EC"
   Rscript ${SRC}/R/EC_counts_bustools.R --topdir=${CWD}
+  rm ${CWD}/output.bus.txt ${CWD}/matrix.ec
+
+  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully prepared in ${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}"
 
 }
 
 # :command.function
 mpaqt_prepare_long_read_command() {
   # cli/src/prepare/long-read.sh
-  echo "MPAQT: Preparing long-read RNA-seq data for sample ${args[--sample]} in project ${args[--project]}"
+  echo "MPAQT ————— Preparing long-read RNA-seq data for sample ${args[--sample]} in project ${args[--project]}"
 
   CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
   SRC=${MPAQT_DIR}/src
@@ -770,13 +772,15 @@ mpaqt_prepare_long_read_command() {
       --topdir ${CWD} \
       --p_matrix ${MPAQT_DIR}/projects/${args[--project]}/P.Rds \
       --lr_counts ${counts}
+    
+  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully prepared in ${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}"
 
 }
 
 # :command.function
 mpaqt_quant_command() {
   # cli/src/quant.sh
-  echo "MPAQT: Quantifying transcript expressions for sample `${args[--sample]}` in project `${args[--project]}`"
+  echo "MPAQT ————— Quantifying transcript expressions for sample ${args[--sample]} in project ${args[--project]}"
 
   CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
   SRC=${MPAQT_DIR}/src
@@ -802,12 +806,15 @@ mpaqt_quant_command() {
   fi
 
   # Runs the MPAQT statistical framework
-  echo MPAQT: Running the MPAQT statistical framework
+  # echo MPAQT ————— Running the MPAQT statistical framework
   Rscript ${SRC}/R/MPAQT.R \
       --topdir=${CWD} \
+      --sample=${args[--sample]} \
       --p_matrix=${MPAQT_DIR}/projects/${args[--project]}/P.Rds \
       --covMx=${MPAQT_DIR}/projects/${args[--project]}/covMx.Rds \
       --LR_counts=${CWD}/LR.counts.Rds
+
+  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully quantified in ${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}/quant"
 
 }
 
@@ -1217,6 +1224,19 @@ mpaqt_create_project_parse_requirements() {
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
+      # :flag.case
+      --index | -i)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--index']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--index requires an argument: --index, -i PATH" >&2
+          exit 1
+        fi
+        ;;
 
       -?*)
         printf "invalid option: %s\n" "$key" >&2

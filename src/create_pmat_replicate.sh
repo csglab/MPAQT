@@ -49,7 +49,7 @@ usage() {
   echo "  -i, --KALLISTO_IDX  Kallisto index"
   echo "  -s, --scripts       Scripts directory"
   echo "  -l, --lib_size      Library size"
-  echo "  -p, --num_threads   Number of threads"
+  echo "  -p, --kallisto_num_threads   Number of threads for kallisto bus (default: 1)"
   echo "  -h, --help          Display this help message"
 }
 
@@ -63,7 +63,7 @@ while getopts ":r:t:m:x:i:s:l:h-:" opt; do
     i ) KALLISTO_IDX=$OPTARG ;;
     s ) scripts=$OPTARG ;;
     l ) lib_size=$OPTARG ;;
-    p ) num_threads=$OPTARG ;;
+    p ) kallisto_num_threads=$OPTARG ;;
     h ) usage; exit 0 ;;
     - )
       case "${OPTARG}" in
@@ -74,7 +74,7 @@ while getopts ":r:t:m:x:i:s:l:h-:" opt; do
         KALLISTO_IDX=*) KALLISTO_IDX=${OPTARG#*=} ;;
         scripts=*) scripts=${OPTARG#*=} ;;
         lib_size=*) lib_size=${OPTARG#*=} ;;
-        num_threads=*) num_threads=${OPTARG#*=} ;;
+        kallisto_num_threads=*) kallisto_num_threads=${OPTARG#*=} ;;
         help) usage; exit 0 ;;
         *) echo "Invalid option: --${OPTARG}" >&2; usage; exit 1 ;;
       esac ;;
@@ -92,7 +92,7 @@ if [ -z "$topdir" ] || [ -z "$mode" ] || [ -z "$ref_txome" ] || [ -z "$KALLISTO_
 fi
 
 # Arguments
-OUTPUT_DIR=$topdir/p-matrix/replicates/rep$rep
+OUTPUT_DIR=$topdir/rep$rep
 mkdir -p ${OUTPUT_DIR}
 sample=simulated_rep${rep}
 
@@ -115,7 +115,7 @@ kallisto bus \
   --index $KALLISTO_IDX \
   --output-dir $OUTPUT_DIR \
   --technology bulk \
-  --threads ${num_threads} \
+  --threads ${kallisto_num_threads} \
   --num \
   ${FASTQ1} \
   > /dev/null 2>&1
@@ -132,8 +132,33 @@ bustools text -f -o $OUTPUT_DIR/output.bus.txt $OUTPUT_DIR/output.bus  > /dev/nu
 # Extracts the read names from the FASTQ files. The read name contains the transcript
 # of origin of the read.
 # echo "———————— Parsing read names from FASTQ file for replicate $rep"
-cat $FASTQ1 | gunzip | grep ^@R | awk '{gsub("\\|","\t",$0); print;}' | awk '{gsub(":","\t",$0); print;}' | cut -f 1,2 > $OUTPUT_DIR/read_names.txt
-zcat $FASTQ1 | grep ^@R | cut -d':' -f 2 | sort | uniq > $OUTPUT_DIR/transcripts.txt
+# zcat $FASTQ1 | grep ^@R | awk '{gsub("\\|","\t",$0); print;}' | awk '{gsub(":","\t",$0); print;}' | cut -f 1,2 > $OUTPUT_DIR/read_names.txt
+# zcat $FASTQ1 | grep ^@R | cut -d':' -f 2 | sort | uniq > $OUTPUT_DIR/transcripts.txt
+
+read_names_file=$OUTPUT_DIR/read_names.txt
+transcripts_file=$OUTPUT_DIR/transcripts.txt
+
+# Make sure the files are empty
+> $read_names_file
+> $transcripts_file
+
+zcat ${FASTQ1} | \
+  grep ^@R | \
+  awk -F ':' '{
+      split($2, id_parts, "|")    
+      print $1 "\t" id_parts[1] >> "'$read_names_file'"
+
+      id = $2
+      if (!seen[id]++) {
+          ids[++count] = id
+      }
+  }
+  END {
+      for (i = 1; i <= count; i++) {
+          print ids[i] >> "'$transcripts_file'"
+      }
+  }'
+
 # echo "Read name parsing complete for replicate $rep"
 
 # Count reads per-EC
@@ -148,6 +173,6 @@ Rscript $scripts/R/p_matrix_counts.R --topdir=$OUTPUT_DIR
 # echo "Read counting and RDS generation complete for replicate $rep"
 
 # Clean up intermediate files
-find "$OUTPUT_DIR" -type f ! -name "ec.txs.joined.counts.Rds" -exec rm -f {} +
+find "$OUTPUT_DIR" -type f ! -name "ec.txs.joined.counts.Rds" ! -name "transcripts.txt" -exec rm -f {} +
  
 # echo "———————— Generation completed successfully for replicate $rep at: $(date)"
