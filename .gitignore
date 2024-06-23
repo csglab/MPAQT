@@ -1,4 +1,5 @@
-references/
+references/*
+!references/gencode.v46.index.mpaqt
 projects/
 data/
 tmp/
