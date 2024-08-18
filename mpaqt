@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # MPAQT ————— Multi-Platform Analysis and Quantification of Transcripts
-# Copyright (C) 2024 CSG lab
+# Copyright (C) 2024 Michael Apostolides, Ali Saberi, and Hamed S. Najafabadi
 # The CSG lab is part of the Department of Human Genetics at McGill University, and is located at the McGill University and Génome Québec Innovation Centre.
 
 # :command.master_script
