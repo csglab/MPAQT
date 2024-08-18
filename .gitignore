@@ -1,5 +1,9 @@
 references/*
 !references/gencode.v46.index.mpaqt
 projects/
-data/
+data/*
+!data/fastq
+data/lr/*
+!data/lr/
+!data/lr/counts_transcript.txt
 tmp/
