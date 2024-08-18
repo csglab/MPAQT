@@ -221,7 +221,7 @@ suppressWarnings({
 })
 
 # print("SAVING Rds OBJECT")
-saveRDS(res, str_glue("{topdir}/{sample}.sr.mpaqt"))
+saveRDS(res, str_glue("{topdir}/{sample}.sr.mpaqt.RDS"))
 
 # print("Writing tsv MPAQT output")
 MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
@@ -234,7 +234,7 @@ suppressWarnings({
 })
 
 # print("SAVING Rds OBJECT")
-saveRDS(res2, str_glue("{topdir}/{sample}.lr_sr.mpaqt"))
+saveRDS(res2, str_glue("{topdir}/{sample}.lr_sr.mpaqt.RDS"))
 
 # print("Writing tsv MPAQT output")
 MPAQT.LR.df <- data.frame(transcript_id=names(res2$tpm), TPM=res2$tpm)
