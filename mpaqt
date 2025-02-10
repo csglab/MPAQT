@@ -617,8 +617,8 @@ mpaqt_index_command() {
 
   echo "——————————— Generating kallisto index for reference transcriptome."
   kallisto index \
-      --index ${kallisto_index} \
-      --threads ${num_threads} \
+      --index=${kallisto_index} \
+      --threads=${num_threads} \
       ${ref_txome} \
       > /dev/null 2>&1
 
@@ -652,7 +652,7 @@ mpaqt_index_command() {
       --scripts=${SRC} \
       --reps=${num_reps}
 
-  echo "——————————— Generating covariance matrix"
+  echo "——————————— Generating covariate matrix"
   Rscript ${SRC}/R/generate_covMx.R \
       --topdir=${CWD}/cov-matrix \
       --fasta=${ref_txome} \
