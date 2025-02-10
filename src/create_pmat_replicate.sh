@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -eo pipefail
 
 # This script automates the process of generating simulated single-end FASTQ files, mapping the reads to equivalence classes (ECs) using kallisto,
 # and combining the read-EC mappings with the original transcript information. The final output is saved as an RDS file containing the counts of
@@ -26,7 +27,7 @@
 #   -h, --help          Display this help message and exit
 
 # Example:
-#   ./script.sh --rep=10 --topdir=/path/to/output --mode=fast --ref_txome=/path/to/ref_txome.fa \
+#   ./script.sh --rep=10 --topdir=/path/to/output --mode=paired --ref_txome=/path/to/ref_txome.fa \
 #               --KALLISTO_IDX=/path/to/kallisto_idx.idx --scripts=/path/to/scripts --lib_size=1000000
 
 # Initialize variables with default values
@@ -112,10 +113,10 @@ Rscript $scripts/R/simReads.R --topdir=$OUTPUT_DIR --sample=$sample --ref_txome=
 # echo "———————— Running kallisto bus for replicate $rep"
 FASTQ1=${OUTPUT_DIR}/${sample}_R1.fastq.gz
 kallisto bus \
-  --index $KALLISTO_IDX \
-  --output-dir $OUTPUT_DIR \
-  --technology bulk \
-  --threads ${kallisto_num_threads} \
+  --index=$KALLISTO_IDX \
+  --output-dir=$OUTPUT_DIR \
+  --technology=bulk \
+  --threads=${kallisto_num_threads} \
   --num \
   ${FASTQ1} \
   > /dev/null 2>&1

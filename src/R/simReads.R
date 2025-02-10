@@ -1,4 +1,5 @@
 # This script generates simulated short-read FASTQs using a provided reference transcriptome
+
 # Can produce either single-end or paired-end FASTQ files
 # Generates the fastqs such that all transcripts have equal abundance 
 library(magrittr)
@@ -27,7 +28,6 @@ ref_txome <- args$ref_txome
 mode <- args$mode
 lib.size <- args$lib_size
 
-
 # Scan through the fasta file to get transcript names and lengths
 transcripts <- scanFasta(ref_txome)
 nsequences <- nrow(transcripts) - sum(transcripts$Duplicate)
@@ -44,7 +44,6 @@ if (mode == "single"){
 } else {
  stop("Something went wrong")
 }
-print(paste0("paired mode is: ", paired))
 
 # generate reads
 true.counts <- simReads(ref_txome, 
