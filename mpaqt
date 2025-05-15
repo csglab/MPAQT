@@ -601,7 +601,7 @@ mpaqt_index_command() {
   else
       TMPDIR=${args[--tmp_dir]}/tmp/tmp_${RANDOM}
   fi
-
+  
   CWD=${TMPDIR}
   mkdir -p ${CWD} ${CWD}/p-matrix ${CWD}/cov-matrix
   export TMPDIR=${CWD}
@@ -614,6 +614,7 @@ mpaqt_index_command() {
 
   kallisto_index="${args[--output]}.kallisto"
   kallisto_index=$(realpath ${kallisto_index})
+  echo "kallisto_index: ${kallisto_index}"
 
   echo "——————————— Generating kallisto index for reference transcriptome."
   kallisto index \
@@ -624,6 +625,7 @@ mpaqt_index_command() {
 
   num_reads=${args[--num_reads]}
   num_reps=25
+  # num_reps=1 ## for new-indexing
   lib_size=${num_reads}
   max_lib_size=100000000
   half_max_lib_size=$((max_lib_size / 2))
@@ -634,6 +636,8 @@ mpaqt_index_command() {
       lib_size=${max_lib_size}
       # echo "num_reads is greater than 100 million. Setting num_reps to $num_reps."
   fi
+
+  echo "################## ${num_reps} ###################"
 
   echo "——————————— Generating P matrix"
   seq 1 ${num_reps} | xargs -I{} -P${mpaqt_threads} bash -c "
@@ -676,14 +680,14 @@ mpaqt_create_project_command() {
   SRC=${MPAQT_DIR}/src
 
   echo 'MPAQT ————— Creating project'
-  mkdir -p ${MPAQT_DIR}/projects/${args[project_id]}
+  mkdir -p ${MPAQT_PROJ_DIR}/${args[project_id]}
 
   Rscript ${SRC}/R/load_mpaqt_index.R \
       --index ${args[--index]} \
-      --p_matrix ${MPAQT_DIR}/projects/${args[project_id]}/P.Rds \
-      --cov_matrix ${MPAQT_DIR}/projects/${args[project_id]}/covMx.Rds
+      --p_matrix ${MPAQT_PROJ_DIR}/${args[project_id]}/P.Rds \
+      --cov_matrix ${MPAQT_PROJ_DIR}/${args[project_id]}/covMx.Rds
 
-  echo "——————————— Project ${args[project_id]} has been created in ${MPAQT_DIR}/projects/${args[project_id]}"
+  echo "——————————— Project ${args[project_id]} has been created in ${MPAQT_PROJ_DIR}/${args[project_id]}"
 
 }
 
@@ -701,8 +705,8 @@ mpaqt_create_sample_command() {
 
   for sample in "${samples[@]}"
   do
-      mkdir -p ${MPAQT_DIR}/projects/${args[--project]}/samples/${sample}
-      echo "——————————— Sample ${sample} of project ${args[--project]} has been successfully created in ${MPAQT_DIR}/projects/${args[--project]}/samples/${sample}"
+      mkdir -p ${MPAQT_PROJ_DIR}/${args[--project]}/samples/${sample}
+      echo "——————————— Sample ${sample} of project ${args[--project]} has been successfully created in ${MPAQT_PROJ_DIR}/${args[--project]}/samples/${sample}"
   done
 }
 
@@ -711,10 +715,10 @@ mpaqt_prepare_short_read_command() {
   # cli/src/prepare/short-read.sh
   echo "MPAQT ————— Preparing short-read RNA-seq data for sample ${args[--sample]} in project ${args[--project]}"
 
-  CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
+  CWD=${MPAQT_PROJ_DIR}/${args[--project]}/samples/${args[--sample]}
   SRC=${MPAQT_DIR}/src
 
-  if [ ! -d ${MPAQT_DIR}/projects/${args[--project]} ]; then
+  if [ ! -d ${MPAQT_PROJ_DIR}/${args[--project]} ]; then
       echo "MPAQT ERROR: Project ${args[--project]} does not exist. Please create the project first."
       exit 1
   fi
@@ -744,7 +748,7 @@ mpaqt_prepare_short_read_command() {
   Rscript ${SRC}/R/EC_counts_bustools.R --topdir=${CWD}
   rm ${CWD}/output.bus.txt ${CWD}/matrix.ec
 
-  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully prepared in ${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}"
+  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully prepared in ${MPAQT_PROJ_DIR}/${args[--project]}/samples/${args[--sample]}"
 
 }
 
@@ -753,10 +757,10 @@ mpaqt_prepare_long_read_command() {
   # cli/src/prepare/long-read.sh
   echo "MPAQT ————— Preparing long-read RNA-seq data for sample ${args[--sample]} in project ${args[--project]}"
 
-  CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
+  CWD=${MPAQT_PROJ_DIR}/${args[--project]}/samples/${args[--sample]}
   SRC=${MPAQT_DIR}/src
 
-  if [ ! -d ${MPAQT_DIR}/projects/${args[--project]} ]; then
+  if [ ! -d ${MPAQT_PROJ_DIR}/${args[--project]} ]; then
       echo "MPAQT ERROR: Project ${args[--project]} does not exist. Please create the project first."
       exit 1
   fi
@@ -770,10 +774,10 @@ mpaqt_prepare_long_read_command() {
 
   Rscript ${SRC}/R/prepare_lr_counts.R \
       --topdir ${CWD} \
-      --p_matrix ${MPAQT_DIR}/projects/${args[--project]}/P.Rds \
+      --p_matrix ${MPAQT_PROJ_DIR}/${args[--project]}/P.Rds \
       --lr_counts ${counts}
     
-  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully prepared in ${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}"
+  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully prepared in ${MPAQT_PROJ_DIR}/${args[--project]}/samples/${args[--sample]}"
 
 }
 
@@ -782,10 +786,10 @@ mpaqt_quant_command() {
   # cli/src/quant.sh
   echo "MPAQT ————— Quantifying transcript expressions for sample ${args[--sample]} in project ${args[--project]}"
 
-  CWD=${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}
+  CWD=${MPAQT_PROJ_DIR}/${args[--project]}/samples/${args[--sample]}
   SRC=${MPAQT_DIR}/src
 
-  if [ ! -d ${MPAQT_DIR}/projects/${args[--project]} ]; then
+  if [ ! -d ${MPAQT_PROJ_DIR}/${args[--project]} ]; then
       echo "MPAQT ERROR: Project ${args[--project]} does not exist. Please create the project first."
       exit 1
   fi
@@ -810,11 +814,11 @@ mpaqt_quant_command() {
   Rscript ${SRC}/R/MPAQT.R \
       --topdir=${CWD} \
       --sample=${args[--sample]} \
-      --p_matrix=${MPAQT_DIR}/projects/${args[--project]}/P.Rds \
-      --covMx=${MPAQT_DIR}/projects/${args[--project]}/covMx.Rds \
+      --p_matrix=${MPAQT_PROJ_DIR}/${args[--project]}/P.Rds \
+      --covMx=${MPAQT_PROJ_DIR}/${args[--project]}/covMx.Rds \
       --LR_counts=${CWD}/LR.counts.Rds
 
-  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully quantified in ${MPAQT_DIR}/projects/${args[--project]}/samples/${args[--sample]}/quant"
+  echo "——————————— Sample ${args[--sample]} of project ${args[--project]} has been successfully quantified in ${MPAQT_PROJ_DIR}/${args[--project]}/samples/${args[--sample]}/quant"
 
 }
 
@@ -847,6 +851,9 @@ parse_requirements() {
   if [[ -z "${MPAQT_DIR:-}" ]]; then
     printf "missing required environment variable: MPAQT_DIR\n" >&2
     exit 1
+  fi
+  if [[ -z "${MPAQT_PROJ_DIR:-}" ]]; then
+    export MPAQT_PROJ_DIR="${MPAQT_PROJ_DIR}"
   fi
 
   # :command.command_filter

@@ -1,28 +1,28 @@
 #!/bin/bash
 set -eo pipefail
 
-CWD='/scratch/asabe/csg/mpaqt/rebuttal'
+CWD='/home/saberi/projects/mpaqt'
 MPAQT_DIR="${CWD}/MPAQT"
-tmp_dir='/projects/asabe/tmp'
-NUM_THREADS=32
+tmp_dir='/home/saberi/projects/mpaqt/tmp'
+NUM_THREADS=16
 
 export MPAQT_DIR=$MPAQT_DIR
 export PATH=$MPAQT_DIR:$PATH
 export TMPDIR="${tmp_dir}"
 
-mpaqt index \
-    --ref_txome ${CWD}/data/references/gencode.v47.transcripts.fa \
-    --ref_annot ${CWD}/data/references/gencode.v47.annotation.gtf \
-    --output ${CWD}/data/references/gencode.v47.annotation.index \
-    --num_threads ${NUM_THREADS} \
-    --tmp_dir ${tmp_dir}
+# mpaqt index \
+#     --ref_txome ${CWD}/data/references/gencode.v47.transcripts.fa \
+#     --ref_annot ${CWD}/data/references/gencode.v47.annotation.gtf \
+#     --output ${CWD}/data/references/gencode.v47.annotation.index \
+#     --num_threads ${NUM_THREADS} \
+#     --tmp_dir ${tmp_dir}
 
-mpaqt index \
-    --ref_txome ${CWD}/data/references/neurondiff_isoseq.gencode_v47.GRCh38_p14.extended_annotations.transcripts.fasta \
-    --ref_annot ${CWD}/data/references/neurondiff_isoseq.gencode_v47.GRCh38_p14.extended_annotations.sorted.biotyped.gtf \
-    --output ${CWD}/data/references/neurondiff_isoseq.gencode_v47.GRCh38_p14.extended_annotations.index \
-    --num_threads ${NUM_THREADS} \
-    --tmp_dir ${tmp_dir}
+# mpaqt index \
+#     --ref_txome ${CWD}/data/references/neurondiff_isoseq.gencode_v47.GRCh38_p14.extended_annotations.transcripts.fasta \
+#     --ref_annot ${CWD}/data/references/neurondiff_isoseq.gencode_v47.GRCh38_p14.extended_annotations.sorted.biotyped.gtf \
+#     --output ${CWD}/data/references/neurondiff_isoseq.gencode_v47.GRCh38_p14.extended_annotations.index \
+#     --num_threads ${NUM_THREADS} \
+#     --tmp_dir ${tmp_dir}
 
 projects=(
 	'gencode.v47.annotation'

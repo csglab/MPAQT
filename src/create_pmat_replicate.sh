@@ -88,6 +88,13 @@ shift $((OPTIND -1))
 # Check for required parameters
 if [ -z "$topdir" ] || [ -z "$mode" ] || [ -z "$ref_txome" ] || [ -z "$KALLISTO_IDX" ] || [ -z "$scripts" ] || [ -z "$lib_size" ]; then
   echo "Error: Missing required parameters."
+  echo $topdir
+  echo $mode
+  echo $ref_txome
+  echo $KALLISTO_IDX
+  echo $scripts
+  echo $lib_size
+  
   usage
   exit 1
 fi
@@ -118,8 +125,8 @@ kallisto bus \
   --technology=bulk \
   --threads=${kallisto_num_threads} \
   --num \
-  ${FASTQ1} \
-  > /dev/null 2>&1
+  ${FASTQ1} 
+  # > /dev/null 2>&1
 # echo "Kallisto bus run complete for replicate $rep"
 # echo "FASTQ file used: $FASTQ1"
 
