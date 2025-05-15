@@ -204,10 +204,9 @@ n_sample[names(n)[which(! names(n) %in%  reads.ecs.counts$txs )]] <- 0
 n_sample <- n_sample[names(n)]
 
 tol=1e-10
-itelim=100
+itelim=1000
 
 dir.create(file.path(topdir, "quant"), showWarnings = FALSE)
-
 
 # Run MPAQT
 # Save MPAQT output as Rds objects containing all output of the MPAQT model
@@ -227,10 +226,11 @@ saveRDS(res, str_glue("{topdir}/{sample}.sr.mpaqt.RDS"))
 MPAQT.SR.df <- data.frame(transcript_id=names(res$tpm), TPM=res$tpm)
 write.table(MPAQT.SR.df, file=str_glue("{topdir}/quant/{sample}.MPAQT.SR.tsv"), quote=F, row.names=F, sep = "\t")
 
+
 # print("FITTING MPAQT WITH LR + SR DATA")
 # res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR.counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
 suppressWarnings({
-  res2 <- fit_model.v9.better_convergence( P, n_sample, n2=LR_counts,covMx = covMx, prior=T, tol=tol, itelim=itelim )
+  res2 <- fit_model.v9.better_convergence(P, n_sample, n2 = LR_counts, covMx = covMx, prior = T, tol = tol, itelim = itelim)
 })
 
 # print("SAVING Rds OBJECT")

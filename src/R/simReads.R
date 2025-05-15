@@ -50,9 +50,9 @@ true.counts <- simReads(ref_txome,
 	TPMs,
 	paired.end = paired,
 	output.prefix = file.path(topdir, sample.name),
-	read.length = 75,
+	read.length = 81,
 	library.size = lib.size,
 	truth.in.read.names = TRUE,
-	)
+	simulate.sequencing.error=FALSE)
 
 sink()

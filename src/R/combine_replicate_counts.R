@@ -31,7 +31,7 @@ counts <- readRDS(paste0(dir, "ec.txs.joined.counts.Rds"))
 if (reps == 1){
   saveRDS(counts, file=file.path(topdir, "rep_counts.1reps.Rds"))
   sink()
-  return()
+  quit()
 }
 
 for (rep in 2:reps){
