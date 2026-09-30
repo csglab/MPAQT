@@ -1,8 +1,7 @@
 url: https://csglab.github.io/mpaqt2/
 
 template:
-  bootstrap: 5
-  bootswatch: flatly
+  bootstrap: 3
 
 home:
   title: MPAQT - Multi-Platform Accurate Quantification of Transcripts
@@ -16,8 +15,6 @@ navbar:
     articles:
       text: Articles
       menu:
-        - text: Get Started
-          href: articles/mpaqt.html
         - text: Installation
           href: articles/installation.html
         - text: "---"

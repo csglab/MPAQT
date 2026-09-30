@@ -36,6 +36,12 @@
 #' @param n_bins Number of distance bins for bias correction (default: 50)
 #' @param prior_model Prior specification: NULL (none), "shrinkage",
 #'   "long_read", or a custom list. See Details.
+#' @param do_umi_correction Normalize each transcript P matrix so its `x` values
+#'   sum to 1 before post-quantification. This is mainly intended for UMI-based
+#'   single-cell data.
+#' @param umi_correction_timing When `do_umi_correction = TRUE` and positional
+#'   weights are used, normalize transcript probabilities either before applying
+#'   positional weights (`"pre"`) or after weighting (`"post"`, default).
 #' @param normalize Normalization method: "tpm" (default), "depth", or "none"
 #' @param max_iter Maximum number of EM iterations (default: 100)
 #' @param tolerance Convergence tolerance for log-likelihood change
@@ -106,6 +112,8 @@ mpaqt_quant <- function(
     positional_bias = NULL,
     n_bins = 50L,
     prior_model = NULL,
+    do_umi_correction = FALSE,
+    umi_correction_timing = "post",
     normalize = "tpm",
     max_iter = 100L,
     tolerance = 1e-4,
@@ -150,6 +158,8 @@ mpaqt_quant <- function(
         lr_counts = lr_counts,
         prequant = prequant,
         prior_model = prior_model,
+        do_umi_correction = do_umi_correction,
+        umi_correction_timing = umi_correction_timing,
         normalize = normalize,
         max_iter = max_iter,
         tolerance = tolerance,
@@ -262,9 +272,11 @@ mpaqt_quant_sc <- function(
     positional_bias = NULL,
     n_bins = 50L,
     prior_model = NULL,
+    do_umi_correction = TRUE,
+    umi_correction_timing = "post",
     max_iter = 100L,
     tolerance = 1e-4,
-    prior_start = 25L,
+    prior_start = 50L,
     convergence_start = 25L,
     verbose = TRUE
 ) {
@@ -326,6 +338,8 @@ mpaqt_quant_sc <- function(
             lr_counts = lr_counts,
             prequant = prequant,
             prior_model = prior_model,
+            do_umi_correction = do_umi_correction,
+            umi_correction_timing = umi_correction_timing,
             normalize = "tpm",
             max_iter = max_iter,
             tolerance = tolerance,
@@ -434,4 +448,3 @@ mpaqt_save_result_sc <- function(results, output_dir, prefix = "mpaqt") {
 
     invisible(combined_file)
 }
-

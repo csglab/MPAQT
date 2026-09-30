@@ -674,9 +674,11 @@ Rscript -e "install.packages('/path/to/mpaqt', repos=NULL, type='source')"
 ```
 
 **Error: kallisto not found**
+
+Install [kallisto](https://github.com/pachterlab/kallisto) and [bustools](https://github.com/BUStools/bustools), then verify:
 ```bash
-# Install via conda
-conda install -c bioconda kallisto bustools
+kallisto version
+bustools version
 ```
 
 **Error: Index file not compatible**

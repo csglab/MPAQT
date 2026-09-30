@@ -3,7 +3,7 @@ From: continuumio/miniconda3:latest
 
 %labels
     Author Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi
-    Version 2.0.0
+    Version 2.4.0
     Variant full
     Description MPAQT Full - with all optional dependencies (minimap2, samtools, Bioconductor packages)
     org.opencontainers.image.source https://github.com/csglab/mpaqt2

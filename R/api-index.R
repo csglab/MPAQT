@@ -713,7 +713,10 @@ process_index_chunk <- function(
 #' @return List of data.tables, one per transcript
 #' @keywords internal
 build_p_list_with_distances <- function(p_mat, p_trs, p_ecs, distances_dt) {
-    # Set key for O(log n) lookups instead of O(n) table scans
+    # Use a keyed copy for O(log n) lookups — do NOT modify the original
+    # distances_dt in-place, as setkey would re-sort it and break the
+    # simulation natural order that index$distances must preserve
+    distances_dt <- data.table::copy(distances_dt)
     data.table::setkey(distances_dt, tr_id, ec_tr_id)
 
     lapply(seq_len(ncol(p_mat)), function(j) {

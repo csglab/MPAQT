@@ -53,5 +53,10 @@ releases/
 !releases/.gitkeep
 
 # Release credentials and logs
-release-credentials.yml
-release.log
+release_cred.yml
+release_log.txt
+
+debug/
+.lintr.R
+CLAUDE.md
+AGENTS.md

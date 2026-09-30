@@ -20,14 +20,7 @@ This guide covers installing MPAQT and all its dependencies. MPAQT has both R pa
 
 **R Installation:**
 
-MPAQT requires R (>= 4.0.0) and system libraries for compiling R packages:
-
-```bash
-# Install R and compilation dependencies via conda (recommended)
-conda install -c conda-forge r-base cmake icu zlib
-```
-
-Or install R from [CRAN](https://cran.r-project.org/) and ensure `cmake`, `icu`, and `zlib` are available on your system.
+Install R (>= 4.0.0) from [CRAN](https://cran.r-project.org/) with compilation tools (make, zlib, curl).
 
 ---
 
@@ -223,30 +216,43 @@ docker pull csglab/mpaqt:2.0.0-dev
 
 ### Apptainer (for HPC)
 
+First, configure the Sylabs Cloud remote (one-time setup):
+
+```bash
+# Add the Sylabs Cloud remote
+apptainer remote add --no-login SylabsCloud cloud.sylabs.io
+
+# Set it as default
+apptainer remote use SylabsCloud
+```
+
+Then pull the image:
+
 ```bash
 # Stable
-apptainer pull library://csglab/mpaqt:2.0.0
+apptainer pull library://csglab/mpaqt/mpaqt:2.0.0
 apptainer exec mpaqt_2.0.0.sif Rscript analysis.R
 
 # Full
-apptainer pull library://csglab/mpaqt:2.0.0-full
+apptainer pull library://csglab/mpaqt/mpaqt:2.0.0-full
 apptainer exec mpaqt_2.0.0-full.sif Rscript analysis.R
 
 # Development
-apptainer pull library://csglab/mpaqt:2.0.0-dev
+apptainer pull library://csglab/mpaqt/mpaqt:2.0.0-dev
 ```
 
 ### Conda
 
 ```bash
 # Stable
-conda install -c csglab -c conda-forge -c bioconda r-mpaqt
+conda create -n mpaqt -c csglab r-mpaqt
+conda activate mpaqt
 
 # Full (includes minimap2, samtools, Bioconductor packages)
-conda install -c csglab -c conda-forge -c bioconda r-mpaqt-full
+conda create -n mpaqt-full -c csglab r-mpaqt-full
 
 # Development (includes devtools, testthat, etc.)
-conda install -c csglab -c conda-forge -c bioconda r-mpaqt-dev
+conda create -n mpaqt-dev -c csglab r-mpaqt-dev
 ```
 
 ### Which Variant Should I Use?
@@ -385,13 +391,11 @@ install.packages("Matrix")
 
 ```r
 # R packages
+install.packages("pak")
 pak::pak("csglab/mpaqt2")
 ```
 
-```bash
-# System tools
-conda install -c bioconda kallisto bustools
-```
+Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bustools](https://github.com/BUStools/bustools) (>= 0.43.1).
 
 ### Full Setup (With Long-Read Processing)
 
@@ -401,10 +405,7 @@ pak::pak("csglab/mpaqt2")
 BiocManager::install(c("Biostrings", "rtracklayer", "bambu", "BSgenome"))
 ```
 
-```bash
-# System tools
-conda install -c bioconda kallisto bustools minimap2 samtools
-```
+Also install [minimap2](https://github.com/lh3/minimap2) and [samtools](https://github.com/samtools/samtools).
 
 ---
 
@@ -457,6 +458,5 @@ bambu: FALSE
 
 After installation:
 
-- Read the [Get Started guide](mpaqt.html) for an overview
 - Follow the [Bulk Workflow](bulk-workflow.html) for your first analysis
 - Check the [CLI Reference](cli-reference.html) if you prefer command-line usage

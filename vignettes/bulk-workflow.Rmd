@@ -964,12 +964,10 @@ tpm_matrix <- combine_quant_results(results)
 ### Common Issues
 
 **Error: Kallisto not found**
-```
-# Ensure kallisto is in PATH
-Sys.which("kallisto")
 
-# Or install via conda
-# conda install -c bioconda kallisto
+Install [kallisto](https://github.com/pachterlab/kallisto) and ensure it's in PATH:
+```r
+Sys.which("kallisto")
 ```
 
 **Error: No matching ECs**

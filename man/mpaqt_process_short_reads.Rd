@@ -23,7 +23,6 @@ An \code{mpaqt_counts_sr} object (invisibly)
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 
-This function is deprecated. Use \code{\link[=mpaqt_prepare_short_reads]{mpaqt_prepare_short_reads()}} instead,
-which supports multiple input pathways.
+This function is deprecated. Use \code{\link[=mpaqt_prepare_short_reads]{mpaqt_prepare_short_reads()}} instead.
 }
 \keyword{internal}

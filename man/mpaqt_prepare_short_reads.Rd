@@ -33,9 +33,7 @@ mpaqt_prepare_short_reads(
 
 \item{output_file}{Path to save the final RDS file (default: \code{output_dir/mpaqt.short_read.rds})}
 
-\item{keep_bus}{Keep intermediate kallisto/bustools files (default: FALSE).
-When FALSE, files like \code{output.bus}, \code{output.bus.txt}, \code{matrix.ec},
-\code{transcripts.txt}, and \code{run_info.json} are deleted after processing.}
+\item{keep_bus}{Keep intermediate kallisto/bustools files (default: FALSE).}
 
 \item{output_dir}{Output directory for results (default: tempdir())}
 
@@ -55,61 +53,5 @@ Supports three input pathways:
 \item \strong{Raw FASTQ files}: Run kallisto bus alignment and extract EC counts
 \item \strong{Pre-computed BUS/EC files}: Skip alignment, process existing BUS output
 \item \strong{Pre-computed RDS}: Load previously saved MPAQT counts directly
-}
-
-The function automatically detects which pathway to use based on the
-arguments provided:
-\itemize{
-\item If \code{rds_file} is provided, loads and returns the pre-computed counts
-\item If \code{bus_file} and \code{ec_file} are provided, processes existing BUS output
-\item If \code{fastq_1} and \code{fastq_2} are provided, runs the full kallisto pipeline
-}
-
-For the FASTQ and BUS pathways, a bundled index will be automatically
-unbundled to a temporary directory.
-}
-\section{Intermediate File Handling}{
-
-By default (\code{keep_bus = FALSE}), intermediate files from kallisto/bustools
-are deleted after EC counts are extracted. Set \code{keep_bus = TRUE} to retain
-these files for debugging or downstream analysis.
-}
-
-\examples{
-\dontrun{
-# Load index
-idx <- mpaqt_read_index("my_index/mpaqt.index.rds")
-
-# Pathway A: From raw FASTQ
-counts <- mpaqt_prepare_short_reads(
-    index = idx,
-    fastq_1 = "sample_R1.fastq.gz",
-    fastq_2 = "sample_R2.fastq.gz",
-    output_dir = "results"
-)
-
-# With explicit output file and keeping BUS files
-counts <- mpaqt_prepare_short_reads(
-    index = idx,
-    fastq_1 = "sample_R1.fastq.gz",
-    fastq_2 = "sample_R2.fastq.gz",
-    output_file = "results/my_sample.short_read.rds",
-    keep_bus = TRUE,
-    output_dir = "results"
-)
-
-# Pathway B: From pre-computed BUS/EC
-counts <- mpaqt_prepare_short_reads(
-    index = idx,
-    bus_file = "kallisto_out/output.bus",
-    ec_file = "kallisto_out/matrix.ec",
-    output_dir = "results"
-)
-
-# Pathway C: From pre-computed RDS
-counts <- mpaqt_prepare_short_reads(
-    index = idx,
-    rds_file = "previous_run/mpaqt.short_read.rds"
-)
 }
 }

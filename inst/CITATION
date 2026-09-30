@@ -1,0 +1,17 @@
+bibentry(
+  bibtype  = "Article",
+  title    = "Accurate isoform quantification by joint short-and long-read RNA-sequencing",
+  author   = c(
+    person("Michael", "Apostolides"),
+    person("Byungwook", "Choi"),
+    person("Albertas", "Navickas"),
+    person("Ali", "Saberi"),
+    person("Lisa M.", "Soto"),
+    person("Hani", "Goodarzi"),
+    person("Hamed S.", "Najafabadi")
+  ),
+  journal  = "bioRxiv",
+  year     = "2024",
+  doi      = "10.1101/2024.07.11.603067",
+  url      = "https://doi.org/10.1101/2024.07.11.603067"
+)

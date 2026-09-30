@@ -1,6 +1,12 @@
 # Development files
 ^VERSION$
-^release\.sh$
+^release_.*\.sh$
+^release_common\.sh$
+
+^log\.txt$
+^release_log\.txt$
+^release_cred\.yml$
+^release_cred\.yml\.template$
 
 # R package development
 ^\.Rproj\.user$

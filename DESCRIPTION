@@ -1,11 +1,11 @@
 Package: mpaqt
 Title: Multi-Platform Accurate Quantification of Transcripts
-Version: 2.0.0
+Version: 2.4.0
 Authors@R: c(
     person("Ali", "Saberi", , "saberiato@gmail.com", role = c("aut", "cre")),
-    person("Michael", "Apostolides", role = "aut"),
-    person("Jichen", "Wang", role = "aut"),
-    person("Hamed S.", "Najafabadi", role = "aut")
+    person("Michael", "Apostolides", role = c("aut", "cre")),
+    person("Jichen", "Wang", role = c("aut", "cre")),
+    person("Hamed S.", "Najafabadi", role = c("aut", "fnd"))
     )
 Description: MPAQT is a generative framework that integrates short- and long-read
     RNA-seq to overcome each platform's limitations by combining positional-bias

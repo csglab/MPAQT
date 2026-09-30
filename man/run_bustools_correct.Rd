@@ -11,7 +11,7 @@ run_bustools_correct(bus_file, output_file, whitelist, output_dir = tempdir())
 
 \item{output_file}{Path for corrected output}
 
-\item{whitelist}{Path to barcode whitelist file}
+\item{whitelist}{Path to barcode whitelist file (one barcode per line)}
 
 \item{output_dir}{Directory for log files}
 }
@@ -19,6 +19,7 @@ run_bustools_correct(bus_file, output_file, whitelist, output_dir = tempdir())
 Invisible output file path
 }
 \description{
-Correct cell barcodes using a whitelist.
+Correct cell barcodes within 1 Hamming distance of a whitelist.
+Input BUS file must be sorted (via \code{\link{run_bustools_sort}}).
 }
 \keyword{internal}

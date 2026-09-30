@@ -13,5 +13,5 @@ mpaqt_read_short_read_counts(path)
 An \code{mpaqt_counts_sr} object
 }
 \description{
-Load short-read EC counts from a previously saved RDS file.
+Load Pre-Processed Short-Read Counts
 }

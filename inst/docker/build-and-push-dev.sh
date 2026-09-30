@@ -2,6 +2,7 @@
 
 # Configuration - use env vars if set, else defaults
 DOCKER_USER="${DOCKER_USER:-csglab}"
+DOCKER_ORGANIZATION="csglab"
 IMAGE_NAME="mpaqt"
 
 # Parse arguments
@@ -38,7 +39,7 @@ rm mpaqt_${VERSION}.tar.gz
 
 # Build Docker image
 echo "Building Docker image..."
-docker build -f Dockerfile.dev -t ${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev .
+docker build -f Dockerfile.dev -t ${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev .
 
 # Cleanup build context
 rm -f environment.yml
@@ -47,13 +48,13 @@ rm -rf mpaqt-source
 # Test the image
 echo ""
 echo "Testing image..."
-docker run --rm ${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev R --slave -e 'library(mpaqt); cat("mpaqt", as.character(packageVersion("mpaqt")), "OK\n")'
-docker run --rm ${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev mpaqt --help | head -3
-docker run --rm ${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev R --slave -e 'library(testthat); cat("testthat OK\n")'
-docker run --rm ${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev R --slave -e 'library(devtools); cat("devtools OK\n")'
+docker run --rm ${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev R --slave -e 'library(mpaqt); cat("mpaqt", as.character(packageVersion("mpaqt")), "OK\n")'
+docker run --rm ${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev mpaqt --help | head -3
+docker run --rm ${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev R --slave -e 'library(testthat); cat("testthat OK\n")'
+docker run --rm ${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev R --slave -e 'library(devtools); cat("devtools OK\n")'
 
 echo ""
-echo "Build complete: ${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev"
+echo "Build complete: ${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev"
 
 # Push to DockerHub
 if [[ "$AUTO_YES" == true ]]; then
@@ -66,9 +67,9 @@ if [[ "$AUTO_YES" == true ]]; then
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
     fi
 
-    docker push ${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev
+    docker push ${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev
     echo "Done! Image available at:"
-    echo "  - docker.io/${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev"
+    echo "  - docker.io/${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev"
 else
     # Interactive mode
     read -p "Push to DockerHub? (y/n) " -n 1 -r
@@ -81,8 +82,8 @@ else
         fi
 
         echo "Pushing to DockerHub..."
-        docker push ${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev
+        docker push ${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev
         echo "Done! Image available at:"
-        echo "  - docker.io/${DOCKER_USER}/${IMAGE_NAME}:${VERSION}-dev"
+        echo "  - docker.io/${DOCKER_ORGANIZATION}/${IMAGE_NAME}:${VERSION}-dev"
     fi
 fi

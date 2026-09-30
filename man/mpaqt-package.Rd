@@ -6,6 +6,8 @@
 \alias{mpaqt}
 \title{mpaqt: Multi-Platform Accurate Quantification of Transcripts}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 MPAQT is a generative framework that integrates short- and long-read RNA-seq to overcome each platform's limitations by combining positional-bias modeling with prior integration to enable state-of-the-art isoform-resolved transcript quantification.
 
 RNA-seq quantification pipeline integrating short-read and long-read
@@ -65,9 +67,7 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Michael Apostolides
-  \item Jichen Wang
-  \item Hamed S. Najafabadi
+  \item Hamed S. Najafabadi [funder]
 }
 
 }

@@ -11,6 +11,8 @@ mpaqt_quant_sc(
   positional_bias = NULL,
   n_bins = 50L,
   prior_model = NULL,
+  do_umi_correction = TRUE,
+  umi_correction_timing = "post",
   max_iter = 100L,
   tolerance = 1e-04,
   prior_start = 25L,
@@ -34,6 +36,14 @@ cluster (optional, as returned by \code{\link[=mpaqt_prepare_long_reads_sc]{mpaq
 
 \item{prior_model}{Prior specification: NULL (none), "shrinkage",
 "long_read", or a custom list. See Details.}
+
+\item{do_umi_correction}{Normalize each transcript P matrix so its \code{x} values
+sum to 1 before post-quantification. This is mainly intended for UMI-based
+single-cell data.}
+
+\item{umi_correction_timing}{When \code{do_umi_correction = TRUE} and positional
+weights are used, normalize transcript probabilities either before applying
+positional weights (\code{"pre"}) or after weighting (\code{"post"}, default).}
 
 \item{max_iter}{Maximum number of EM iterations (default: 100)}
 

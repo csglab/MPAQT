@@ -11,9 +11,12 @@ mpaqt_prepare_short_reads_sc(
   clusters_file,
   bus_file = NULL,
   ec_file = NULL,
+  whitelist = NULL,
   rds_dir = NULL,
   output_prefix = NULL,
   keep_bus = FALSE,
+  do_umi_dedup = FALSE,
+  umi_dedup_mode = "fractional_proportional",
   output_dir,
   technology = "10xv3",
   threads = 1L,
@@ -33,14 +36,31 @@ mpaqt_prepare_short_reads_sc(
 
 \item{ec_file}{Path to EC mapping file (optional)}
 
+\item{whitelist}{Path to barcode whitelist file for correction (optional).
+If NULL (default), a whitelist is auto-generated from \code{clusters_file}.}
+
 \item{rds_dir}{Directory containing pre-computed cluster RDS files (optional)}
 
-\item{output_prefix}{Prefix for output RDS files (default: "mpaqt").
-Output files will be named \verb{\{output_prefix\}.\{cluster_id\}.short_read.rds}}
+\item{output_prefix}{Prefix for output RDS files (default: "mpaqt").}
 
-\item{keep_bus}{Keep intermediate kallisto/bustools files (default: FALSE).
-When FALSE, files like \code{output.bus}, \code{output.bus.txt}, \code{matrix.ec},
-\code{transcripts.txt}, and \code{run_info.json} are deleted after processing.}
+\item{keep_bus}{Keep intermediate kallisto/bustools files (default: FALSE).}
+
+\item{do_umi_dedup}{Logical (default: FALSE). If TRUE, perform UMI
+deduplication using the strategy specified by \code{umi_dedup_mode}.}
+
+\item{umi_dedup_mode}{Character. UMI deduplication strategy (only used when
+\code{do_umi_dedup = TRUE}). One of:
+\describe{
+\item{\code{"fractional_proportional"}}{(default) Read-proportional
+fractional counting. Mass-conserving, uses within-molecule read
+evidence.}
+\item{\code{"fractional_equal"}}{Equal fractional counting.
+Mass-conserving, each EC gets weight 1/k.}
+\item{\code{"unique"}}{Simple dedup. Each unique (barcode, UMI, EC)
+contributes 1 count.}
+\item{\code{"bustools_count"}}{Dedup via \code{bustools count}. May
+discard counts from newly-created ECs.}
+}}
 
 \item{output_dir}{Output directory for results}
 
@@ -55,39 +75,52 @@ A list of \code{mpaqt_counts_sr} objects, one per cluster (invisibly)
 }
 \description{
 Process single-cell short-read FASTQ files with cluster aggregation.
-Supports multiple input pathways similar to bulk processing.
+Supports optional UMI deduplication with multiple strategies.
 }
-\section{Intermediate File Handling}{
+\details{
+Pipeline (all modes):
+\code{kallisto bus -> sort -> correct -> sort -> bustools text}
 
-By default (\code{keep_bus = FALSE}), intermediate files from kallisto/bustools
-are deleted after EC counts are extracted. Set \code{keep_bus = TRUE} to retain
-these files for debugging or downstream analysis.
+Then branch by \code{do_umi_dedup} and \code{umi_dedup_mode}:
+
+\describe{
+\item{\code{do_umi_dedup = FALSE} (default)}{
+Read-level counting. Each read contributes 1 count to its EC.
+}
+\item{\code{umi_dedup_mode = "unique"}}{
+Collapse duplicate (barcode, UMI, EC) rows, then count rows per
+(barcode, EC). A UMI mapping to k distinct ECs contributes k counts
+(one per EC).
+}
+\item{\code{umi_dedup_mode = "fractional_equal"}}{
+Collapse duplicate (barcode, UMI, EC) rows, then assign each row
+weight = 1/k where k is the number of distinct ECs for that
+(barcode, UMI). Enforces mass conservation: each molecule contributes
+total mass = 1. Counts per (barcode, EC) are \code{sum(weight)}.
+}
+\item{\code{umi_dedup_mode = "fractional_proportional"}}{
+Count reads per (barcode, UMI, EC) \strong{without} deduplicating
+first, then assign weight = n_reads / total_reads within each
+molecule. Enforces mass conservation while using within-molecule
+read support as evidence. Counts per (barcode, EC) are
+\code{sum(weight)}.
+}
+\item{\code{umi_dedup_mode = "bustools_count"}}{
+Uses \code{bustools count} for UMI deduplication. Note: the
+\code{-g} flag causes \code{bustools count} to create new
+equivalence classes not present in \code{matrix.ec}. These are
+discarded with a warning. Only counts mapping to original kallisto
+ECs are retained.
+}
+}
+}
+\section{Fractional Counts}{
+
+When \code{umi_dedup_mode} is \code{"fractional_equal"} or
+\code{"fractional_proportional"}, the resulting EC counts will be
+fractional (non-integer). Downstream code should not assume integer
+counts. This is by design: fractional counting enforces mass
+conservation per molecule and provides a better approximation of
+latent assignment uncertainty, particularly at isoform-dense loci.
 }
 
-\examples{
-\dontrun{
-idx <- mpaqt_read_index("my_index/mpaqt.index.rds")
-
-# From raw FASTQ
-counts_list <- mpaqt_prepare_short_reads_sc(
-    index = idx,
-    fastq_1 = "sample_R1.fastq.gz",
-    fastq_2 = "sample_R2.fastq.gz",
-    clusters_file = "clusters.csv",
-    output_dir = "results",
-    technology = "10xv3"
-)
-
-# With custom output prefix and keeping BUS files
-counts_list <- mpaqt_prepare_short_reads_sc(
-    index = idx,
-    fastq_1 = "sample_R1.fastq.gz",
-    fastq_2 = "sample_R2.fastq.gz",
-    clusters_file = "clusters.csv",
-    output_prefix = "my_sample",
-    keep_bus = TRUE,
-    output_dir = "results",
-    technology = "10xv3"
-)
-}
-}

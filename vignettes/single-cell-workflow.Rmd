@@ -119,6 +119,8 @@ results <- mpaqt_quant_sc(
 tpm_matrix <- combine_quant_results(results)
 ```
 
+> **Note:** `mpaqt_quant_sc()` now enables `do_umi_correction = TRUE` by default. This renormalizes each transcript P matrix before post-quantification, which is appropriate for UMI-based single-cell data. Set `do_umi_correction = FALSE` only if you explicitly want the bulk-style behavior.
+
 ---
 
 ### Level 2: Adding Positional Bias Correction
@@ -383,6 +385,7 @@ mpaqt_quant_sc(
   positional_bias = NULL,     # "3p", "5p", or NULL
   n_bins = 50L,
   prior_model = NULL,
+  do_umi_correction = TRUE,   # Default for single-cell UMI data
   max_iter = 100L,
   tolerance = 1e-4,
   prior_start = 25L,
@@ -400,6 +403,7 @@ results <- mpaqt_quant_sc(
   sr_counts_list = sr_list,
   lr_counts_list = lr_list,        # Optional
   positional_bias = "3p",          # Shared bias correction
+  do_umi_correction = TRUE,        # Default; can be omitted
   max_iter = 100,
   verbose = TRUE
 )
@@ -414,7 +418,7 @@ cluster1_tpm <- tpm(results[["1"]])
 
 ### Shared vs Per-Cluster Processing
 
-Bias correction (`positional_bias`) uses the combined `"all_clusters"` data for more robust weight estimation. The weights are then applied to each cluster's EM algorithm.
+Bias correction (`positional_bias`) uses the combined `"all_clusters"` data for more robust weight estimation. The weights are then applied to each cluster's EM algorithm. UMI correction is applied inside each `mpaqt_postquant()` call by default for single-cell workflows.
 
 ```r
 # Under the hood, mpaqt_quant_sc does:
@@ -431,7 +435,8 @@ for (cluster in names(sr_list)) {
   result <- mpaqt_postquant(
     index = index,
     sr_counts = sr_list[[cluster]],
-    prequant = prequant  # Shared weights
+    prequant = prequant,          # Shared weights
+    do_umi_correction = TRUE      # Default for mpaqt_quant_sc()
   )
 }
 ```

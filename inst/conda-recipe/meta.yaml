@@ -1,6 +1,6 @@
 package:
   name: r-mpaqt
-  version: "2.0.0"
+  version: "2.4.0"
 
 source:
   git_url: https://github.com/csglab/mpaqt2.git
@@ -9,7 +9,6 @@ source:
 build:
   number: 0
   noarch: generic
-  script: R CMD INSTALL --build .
 
 requirements:
   host:
@@ -22,6 +21,7 @@ requirements:
     - r-rlang >=1.0.0
     - r-stringr
     - r-purrr
+    - r-optparse
   run:
     - r-base >=4.0.0
     - r-data.table >=1.14.0
@@ -32,12 +32,14 @@ requirements:
     - r-rlang >=1.0.0
     - r-stringr
     - r-purrr
+    - r-optparse
     - kallisto >=0.50.1
     - bustools >=0.43.1
 
 test:
   commands:
     - R -e "library(mpaqt)"
+    - mpaqt --help
     - kallisto version
     - bustools version
 

@@ -11,6 +11,8 @@ mpaqt_quant(
   positional_bias = NULL,
   n_bins = 50L,
   prior_model = NULL,
+  do_umi_correction = FALSE,
+  umi_correction_timing = "post",
   normalize = "tpm",
   max_iter = 100L,
   tolerance = 1e-04,
@@ -35,6 +37,14 @@ mpaqt_quant(
 
 \item{prior_model}{Prior specification: NULL (none), "shrinkage",
 "long_read", or a custom list. See Details.}
+
+\item{do_umi_correction}{Normalize each transcript P matrix so its \code{x} values
+sum to 1 before post-quantification. This is mainly intended for UMI-based
+single-cell data.}
+
+\item{umi_correction_timing}{When \code{do_umi_correction = TRUE} and positional
+weights are used, normalize transcript probabilities either before applying
+positional weights (\code{"pre"}) or after weighting (\code{"post"}, default).}
 
 \item{normalize}{Normalization method: "tpm" (default), "depth", or "none"}
 

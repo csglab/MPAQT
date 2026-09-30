@@ -1,6 +1,6 @@
 package:
   name: r-mpaqt-full
-  version: "2.0.0"
+  version: "2.4.0"
 
 source:
   git_url: https://github.com/csglab/mpaqt2.git
@@ -9,7 +9,6 @@ source:
 build:
   number: 0
   noarch: generic
-  script: R CMD INSTALL --build .
 
 requirements:
   host:
@@ -54,6 +53,7 @@ requirements:
 test:
   commands:
     - R -e "library(mpaqt)"
+    - mpaqt --help
     - kallisto version
     - bustools version
     - minimap2 --version

@@ -7,9 +7,10 @@
 run_bustools_count(
   bus_file,
   output_prefix,
-  genemap,
   ecmap,
   txnames,
+  genemap = NULL,
+  multimapping = FALSE,
   output_dir = tempdir()
 )
 }
@@ -18,11 +19,15 @@ run_bustools_count(
 
 \item{output_prefix}{Output prefix for count files}
 
-\item{genemap}{Path to transcript-to-gene map}
+\item{ecmap}{Path to equivalence class map (matrix.ec from kallisto bus)}
 
-\item{ecmap}{Path to equivalence class map}
+\item{txnames}{Path to transcript names file (transcripts.txt from kallisto bus)}
 
-\item{txnames}{Path to transcript names file}
+\item{genemap}{Path to transcript-to-gene map (tab-separated, two columns:
+transcript_id and gene_id). Transcript IDs must match transcripts.txt
+exactly — see \code{\link{generate_t2g_from_transcripts}}.}
+
+\item{multimapping}{Logical; count multimapping reads (default: FALSE)}
 
 \item{output_dir}{Directory for log files}
 }
@@ -30,6 +35,8 @@ run_bustools_count(
 Invisible output prefix
 }
 \description{
-Generate count matrices from a sorted, corrected BUS file.
+Generate UMI-deduplicated count matrices from a sorted BUS file.
+Produces MatrixMarket (.mtx), barcodes (.barcodes.txt), and
+EC/gene (.ec.txt or .genes.txt) output files.
 }
 \keyword{internal}

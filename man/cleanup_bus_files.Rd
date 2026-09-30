@@ -15,6 +15,6 @@ cleanup_bus_files(output_dir, verbose = TRUE)
 Invisible NULL
 }
 \description{
-Remove intermediate kallisto/bustools files after processing.
+Clean Up Intermediate BUS Files
 }
 \keyword{internal}

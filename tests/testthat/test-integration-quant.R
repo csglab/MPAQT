@@ -269,3 +269,137 @@ test_that("print.mpaqt_quant_result shows correct information", {
     # Just check that print doesn't error
     expect_no_error(print(result))
 })
+
+test_that("normalize_p_matrices_for_umi returns normalized working copy", {
+    set.seed(1)
+    index <- mock_mpaqt_index(n_transcripts = 4, n_ec = 8)
+    original_sums <- vapply(index$p_matrices, function(p_data) sum(p_data$x), numeric(1))
+
+    normalized_index <- normalize_p_matrices_for_umi(index)
+    normalized_sums <- vapply(normalized_index$p_matrices, function(p_data) sum(p_data$x), numeric(1))
+    post_call_sums <- vapply(index$p_matrices, function(p_data) sum(p_data$x), numeric(1))
+
+    expect_s3_class(normalized_index, "mpaqt_index")
+    expect_equal(unname(normalized_sums), rep(1, length(normalized_sums)), tolerance = 1e-12)
+    expect_equal(post_call_sums, original_sums)
+})
+
+test_that("post UMI normalization happens after positional weighting", {
+    index <- structure(
+        list(
+            transcripts = "tx1",
+            genes = "gene1",
+            ec_ids = c("ec1", "ec2"),
+            p_matrices = list(
+                tx1 = data.table::data.table(
+                    i = c(1L, 2L),
+                    x = c(2, 1),
+                    dist_3p = c(10, 90),
+                    dist_5p = c(10, 90)
+                )
+            ),
+            distances = data.table::data.table(
+                ec_tr_id = c("ec1,tx1", "ec2,tx1"),
+                tr_id = "tx1",
+                dist_3p = c(10, 90),
+                dist_5p = c(10, 90)
+            )
+        ),
+        class = c("mpaqt_index", "list")
+    )
+
+    sr_counts <- c(ec1 = 10, ec2 = 20)
+    weights <- c(1, 3)
+
+    post_result <- run_em_algorithm(
+        index = index,
+        sr_counts = sr_counts,
+        positional_weights = weights,
+        bias_type = "3p",
+        post_weight_umi_correction = TRUE,
+        max_iter = 1L,
+        verbose = FALSE
+    )
+
+    manual_index <- index
+    manual_index$p_matrices[[1]] <- data.table::copy(index$p_matrices[[1]])
+    manual_index$p_matrices[[1]][, x := c(0.4, 0.6)]
+
+    manual_result <- run_em_algorithm(
+        index = manual_index,
+        sr_counts = sr_counts,
+        max_iter = 1L,
+        verbose = FALSE
+    )
+
+    pre_result <- run_em_algorithm(
+        index = normalize_p_matrices_for_umi(index),
+        sr_counts = sr_counts,
+        positional_weights = weights,
+        bias_type = "3p",
+        max_iter = 1L,
+        verbose = FALSE
+    )
+
+    expect_equal(post_result$abundances, manual_result$abundances, tolerance = 1e-12)
+    expect_equal(post_result$fitted_values, manual_result$fitted_values, tolerance = 1e-12)
+    expect_gt(abs(post_result$abundances[[1]] - pre_result$abundances[[1]]), 1e-6)
+})
+
+test_that("mpaqt_postquant stores umi correction flag", {
+    set.seed(2)
+    index <- mock_mpaqt_index(n_transcripts = 4, n_ec = 8)
+    sr_counts <- mock_short_read_counts(index)
+    default_umi_timing <- eval(formals(mpaqt_postquant)$umi_correction_timing)
+
+    result <- mpaqt_postquant(
+        index = index,
+        sr_counts = sr_counts,
+        max_iter = 2L,
+        convergence_start = 1L,
+        verbose = FALSE
+    )
+
+    expect_false(isTRUE(result$parameters$do_umi_correction))
+    expect_equal(result$parameters$umi_correction_timing, default_umi_timing)
+})
+
+test_that("validate_umi_correction_timing rejects invalid values", {
+    expect_error(
+        validate_umi_correction_timing("late"),
+        "umi_correction_timing"
+    )
+})
+
+test_that("mpaqt_quant_sc enables umi correction by default", {
+    set.seed(3)
+    index <- mock_mpaqt_index(n_transcripts = 4, n_ec = 8)
+    sr_counts_list <- list(cluster1 = mock_short_read_counts(index))
+
+    results <- mpaqt_quant_sc(
+        index = index,
+        sr_counts_list = sr_counts_list,
+        max_iter = 2L,
+        convergence_start = 1L,
+        verbose = FALSE
+    )
+
+    expect_true(isTRUE(results[["cluster1"]]$parameters$do_umi_correction))
+})
+
+test_that("mpaqt_quant_sc allows disabling umi correction", {
+    set.seed(4)
+    index <- mock_mpaqt_index(n_transcripts = 4, n_ec = 8)
+    sr_counts_list <- list(cluster1 = mock_short_read_counts(index))
+
+    results <- mpaqt_quant_sc(
+        index = index,
+        sr_counts_list = sr_counts_list,
+        do_umi_correction = FALSE,
+        max_iter = 2L,
+        convergence_start = 1L,
+        verbose = FALSE
+    )
+
+    expect_false(isTRUE(results[["cluster1"]]$parameters$do_umi_correction))
+})

@@ -13,6 +13,12 @@
 #' @param prequant An `mpaqt_prequant` object with positional weights (optional)
 #' @param prior_model Prior specification: NULL (none), "shrinkage" (empirical),
 #'   "long_read" (from LR data), or a list with `mean` and `precision` vectors
+#' @param do_umi_correction Normalize each transcript P matrix so its `x` values
+#'   sum to 1 before running EM. This is mainly intended for UMI-based
+#'   single-cell data.
+#' @param umi_correction_timing When `do_umi_correction = TRUE` and positional
+#'   weights are used, normalize transcript probabilities either before applying
+#'   positional weights (`"pre"`) or after weighting (`"post"`, default).
 #' @param normalize Normalization method: "tpm" (default), "depth", or "none"
 #' @param max_iter Maximum EM iterations (default: 100)
 #' @param tolerance Convergence tolerance (default: 1e-4)
@@ -30,6 +36,7 @@
 #' - **Positional weights** from pre-quantification to correct for positional bias
 #' - **Long-read data** for improved isoform disambiguation
 #' - **Prior information** for regularization
+#' - **UMI correction** to renormalize P matrices for single-cell data
 #'
 #' ## Prior Models
 #'
@@ -78,10 +85,12 @@ mpaqt_postquant <- function(
     lr_counts = NULL,
     prequant = NULL,
     prior_model = NULL,
+    do_umi_correction = FALSE,
+    umi_correction_timing = "post",
     normalize = "tpm",
     max_iter = 100L,
     tolerance = 1e-4,
-    prior_start = 25L,
+    prior_start = 50L,
     convergence_start = 25L,
     compute_uncertainty = FALSE,
     verbose = TRUE
@@ -110,6 +119,7 @@ mpaqt_postquant <- function(
 
     validate_prior_model(prior_model)
     validate_normalize(normalize)
+    validate_umi_correction_timing(umi_correction_timing)
 
     # Setup
     if (verbose) cli::cli_h1("MPAQT Post-Quantification")
@@ -139,6 +149,24 @@ mpaqt_postquant <- function(
         bias_type <- prequant$bias_type
     }
 
+    post_weight_umi_correction <- do_umi_correction &&
+        has_prequant &&
+        identical(umi_correction_timing, "post")
+
+    working_index <- index
+    if (do_umi_correction) {
+        if (post_weight_umi_correction) {
+            if (verbose) {
+                cli::cli_alert_info(
+                    "UMI correction: normalizing weighted short-read probabilities during EM"
+                )
+            }
+        } else {
+            if (verbose) cli::cli_alert_info("UMI correction: normalizing P matrices")
+            working_index <- normalize_p_matrices_for_umi(index)
+        }
+    }
+
     # Prepare prior
     prior_predictions <- NULL
     covariate_matrix <- NULL
@@ -147,7 +175,7 @@ mpaqt_postquant <- function(
     if (has_prior) {
         prior_setup <- prepare_prior(
             prior_model = prior_model,
-            index = index,
+            index = working_index,
             lr_counts = if (has_lr) lr_counts$counts else NULL
         )
         prior_predictions <- prior_setup$predictions
@@ -163,11 +191,12 @@ mpaqt_postquant <- function(
     if (verbose) cli::cli_progress_step("Running EM algorithm")
 
     em_result <- run_em_algorithm(
-        index = index,
+        index = working_index,
         sr_counts = sr_vec,
         lr_counts = lr_vec,
         positional_weights = positional_weights,
         bias_type = bias_type,
+        post_weight_umi_correction = post_weight_umi_correction,
         max_iter = max_iter,
         tolerance = tolerance,
         use_prior = use_prior,
@@ -187,7 +216,7 @@ mpaqt_postquant <- function(
     if (compute_uncertainty) {
         if (verbose) cli::cli_progress_step("Computing uncertainty estimates")
         uncertainty <- compute_abundance_uncertainty(
-            index = index,
+            index = working_index,
             abundances = abundances,
             fitted_values = em_result$fitted_values,
             sr_counts = sr_vec
@@ -216,7 +245,9 @@ mpaqt_postquant <- function(
             tolerance = tolerance,
             prior_start = prior_start,
             convergence_start = convergence_start,
-            prior_model_type = if (is.character(prior_model)) prior_model else "custom"
+            prior_model_type = if (is.character(prior_model)) prior_model else "custom",
+            do_umi_correction = do_umi_correction,
+            umi_correction_timing = umi_correction_timing
         ),
         sr_input = list(
             n_reads = sum(sr_vec),
@@ -335,6 +366,42 @@ normalize_abundances <- function(abundances, method = "tpm") {
     }
 
     list(tpm = tpm, counts = counts)
+}
+
+#' Normalize P Matrices for UMI Data
+#'
+#' Create a working copy of an index with each transcript P matrix normalized
+#' so its probability weights sum to 1.
+#'
+#' @param index mpaqt_index object
+#'
+#' @return mpaqt_index object with normalized P matrices
+#' @keywords internal
+normalize_p_matrices_for_umi <- function(index) {
+    working_index <- index
+
+    working_index$p_matrices <- lapply(seq_along(index$p_matrices), function(j) {
+        p_data <- data.table::copy(index$p_matrices[[j]])
+
+        if (length(p_data$x) == 0L) {
+            return(p_data)
+        }
+
+        total <- sum(p_data$x)
+
+        if (!is.finite(total) || total <= 0) {
+            cli::cli_abort(c(
+                "Invalid P matrix for UMI correction",
+                "x" = "Transcript {.val {index$transcripts[[j]]}} has x-sum {.val {total}}"
+            ))
+        }
+
+        p_data[, x := x / total]
+        p_data
+    })
+    names(working_index$p_matrices) <- names(index$p_matrices)
+
+    working_index
 }
 
 #' Compute Abundance Uncertainty

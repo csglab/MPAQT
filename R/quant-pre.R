@@ -295,6 +295,11 @@ run_prequant_em <- function(
     # Bin assignments (computed on first iteration)
     bin_assignments <- vector("list", n_transcripts)
 
+    # Alphabetical transcript order for si_mat construction — must match
+    # mpaqt-dev's merge(distances, tr_abun, by="tr_id", sort=TRUE) which sums
+    # contributions in alphabetical tr_id order, not transcript-index order
+    tr_alpha_order <- order(index$transcripts)
+
     # Prepare flattened data for weight optimization (like mpaqt-dev)
     dist_col <- if (bias_type == "3p") "dist_3p" else "dist_5p"
 
@@ -411,10 +416,13 @@ run_prequant_em <- function(
         if (iter >= weight_update_start) {
             if (verbose) cat(" Updating weights...")
 
-            # Build expected count matrix per bin (matches mpaqt-dev)
+            # Build expected count matrix per bin
+            # Iterate in alphabetical tr_id order to match mpaqt-dev's
+            # merge(distances, tr_abun, by="tr_id") summation order
             si_mat <- matrix(0, nrow = n_ecs, ncol = n_bins)
 
-            for (j in seq_len(n_transcripts)) {
+            for (j_ord in seq_len(n_transcripts)) {
+                j <- tr_alpha_order[j_ord]
                 p_data <- index$p_matrices[[j]]
                 ec_idx <- p_data$i
                 probs <- p_data$x

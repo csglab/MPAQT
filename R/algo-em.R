@@ -18,6 +18,8 @@ utils::globalVariables(c(
 #' @param lr_counts Long-read transcript counts (optional)
 #' @param positional_weights Positional bias weights (optional)
 #' @param bias_type Type of positional bias ("3p" or "5p")
+#' @param post_weight_umi_correction Whether to normalize short-read
+#'   probabilities after applying positional weights
 #' @param max_iter Maximum number of iterations
 #' @param tolerance Convergence tolerance
 #' @param use_prior Whether to use prior predictions
@@ -34,6 +36,7 @@ run_em_algorithm <- function(
     lr_counts = NULL,
     positional_weights = NULL,
     bias_type = "3p",
+    post_weight_umi_correction = FALSE,
     max_iter = 100L,
     tolerance = 1e-4,
     use_prior = FALSE,
@@ -62,6 +65,7 @@ run_em_algorithm <- function(
     }
     lr_probs <- rep(0, n_transcripts)
     lr_model <- NULL
+    lr_counts[!is.finite(lr_counts)] <- 0
 
     # Prior parameters
     prior_mean <- 0
@@ -114,7 +118,8 @@ run_em_algorithm <- function(
             for (j in seq_len(n_transcripts)) {
                 p_data <- index$p_matrices[[j]]
                 ec_idx <- p_data$i
-                probs <- p_data$x
+                sr_probs <- p_data$x
+                probs <- sr_probs
 
                 obs <- sr_counts[ec_idx]
                 exp_counts <- y[ec_idx]
@@ -198,7 +203,7 @@ run_em_algorithm <- function(
             for (j in seq_len(n_transcripts)) {
                 p_data <- index$p_matrices[[j]]
                 ec_idx <- p_data$i
-                probs <- p_data$x
+                sr_probs <- p_data$x
 
                 obs <- sr_counts[ec_idx]
                 exp_counts <- y[ec_idx]
@@ -212,7 +217,7 @@ run_em_algorithm <- function(
                                       labels = FALSE, include.lowest = TRUE)
                         bin_idx[is.na(bin_idx)] <- 1L
                     } else {
-                        bin_idx <- rep(1L, length(probs))
+                        bin_idx <- rep(1L, length(sr_probs))
                     }
                     bin_assignments[[j]] <- bin_idx
                     weights <- positional_weights[bin_idx]
@@ -222,26 +227,38 @@ run_em_algorithm <- function(
                     weights <- positional_weights[bin_idx]
                 }
 
+                weighted_sr_probs <- sr_probs * weights
+                if (post_weight_umi_correction) {
+                    total <- sum(weighted_sr_probs)
+
+                    if (!is.finite(total) || total <= 0) {
+                        cli::cli_abort(c(
+                            "Invalid weighted P matrix for UMI correction",
+                            "x" = "Transcript {.val {index$transcripts[[j]]}} has weighted x-sum {.val {total}}"
+                        ))
+                    }
+
+                    weighted_sr_probs <- weighted_sr_probs / total
+                }
+
+                probs <- weighted_sr_probs
+
                 # Add long-read contribution
                 if (has_lr && lr_counts[j] > 0) {
                     obs <- c(obs, lr_counts[j])
                     exp_counts <- c(exp_counts, beta[j] * lr_probs[j])
                     probs <- c(probs, lr_probs[j])
-                    weights <- c(weights, 1)  # No positional bias for LR
                 }
-
-                # Compute Newton-Raphson update
-                weighted_probs <- probs * weights
 
                 if (iter == 1) {
                     # First iteration: Gaussian approximation (stable near zero)
                     residuals <- obs - exp_counts
-                    delta <- sum(residuals * weighted_probs) / sum(weighted_probs^2)
+                    delta <- sum(residuals * probs) / sum(probs^2)
                 } else {
                     # Subsequent iterations: Poisson likelihood with weights
                     ratio <- (obs + eps) / (exp_counts + eps)
-                    gradient <- sum(weighted_probs * (1 - ratio))
-                    hessian <- sum((obs + eps) * (weighted_probs / (exp_counts + eps))^2)
+                    gradient <- sum(probs * (1 - ratio))
+                    hessian <- sum((obs + eps) * (probs / (exp_counts + eps))^2)
                     delta_unreg <- -gradient / hessian
 
                     # Apply regularization if enabled
@@ -269,7 +286,7 @@ run_em_algorithm <- function(
                             obj_fn <- function(x) {
                                 new_beta <- beta[j] + x
                                 reg <- (log(new_beta) - prior_mu)^2 / (2 * prior_var)
-                                new_exp <- exp_counts + weighted_probs * x
+                                new_exp <- exp_counts + probs * x
                                 nll <- sum(new_exp - obs * log(new_exp + eps))
                                 reg + nll
                             }
@@ -289,9 +306,8 @@ run_em_algorithm <- function(
 
                 beta[j] <- beta[j] + delta
 
-                # Update expected counts with weights (SR only - LR was appended)
-                n_sr <- length(p_data$x)
-                y[ec_idx] <- y[ec_idx] + p_data$x * weights[seq_len(n_sr)] * delta
+                # Update expected counts for the short-read portion only
+                y[ec_idx] <- y[ec_idx] + weighted_sr_probs * delta
             }
         }
 
@@ -309,21 +325,6 @@ run_em_algorithm <- function(
             }
         }
 
-        # Prior model integration (mixed-effects model with gene-level random effects)
-        if (use_prior && iter >= prior_start && !is.null(covariate_matrix) &&
-            !is.null(index$t2g_normalized)) {
-            prior_update <- update_prior_predictions(
-                transcript_abundances = beta,
-                covariate_matrix = covariate_matrix,
-                index = index,
-                method = "gpboost",
-                verbose = FALSE
-            )
-            prior_predictions <- prior_update$predictions
-            prior_var <- prior_update$variance
-            prior_var <- max(prior_var, 1e-6)
-        }
-
         # Update long-read model
         if (has_lr) {
             lr_fit <- fit_long_read_model(
@@ -335,7 +336,8 @@ run_em_algorithm <- function(
             lr_model <- lr_fit$model
         }
 
-        # Calculate log-likelihood
+        # Calculate log-likelihood (uses prior_var from previous iteration's GPBoost update,
+        # matching mpaqt-dev ordering where GPBoost runs after LL computation)
         y[y < 0] <- 0
         ll <- compute_log_likelihood(
             sr_counts = sr_counts,
@@ -366,6 +368,21 @@ run_em_algorithm <- function(
         }
 
         prev_ll <- ll
+
+        # Prior model integration — runs after LL/convergence check, prepares
+        # prior_var and prior_predictions for the next iteration's E-step.
+        # This matches mpaqt-dev (post_quant.R) where GPBoost updates after LL.
+        if (use_prior && iter >= prior_start && !is.null(covariate_matrix)) {
+            prior_update <- update_prior_predictions(
+                transcript_abundances = beta,
+                covariate_matrix = covariate_matrix,
+                index = index,
+                method = "gpboost",
+                verbose = FALSE
+            )
+            prior_predictions <- prior_update$predictions
+            prior_var <- prior_update$variance
+        }
     }
 
     if (!converged && verbose) {
@@ -452,10 +469,9 @@ compute_log_likelihood <- function(
 #' @return List with model and coverage probabilities
 #' @keywords internal
 fit_long_read_model <- function(lr_counts, beta, covariates) {
+    
     if (is.null(covariates)) {
-        # Simple model without covariates
-        probs <- rep(1, length(beta))
-        return(list(probs = probs, model = NULL))
+        covariates <- matrix(1, nrow = length(lr_counts), ncol = 1)
     }
 
     # Ensure beta has a minimum value to avoid log(0) = -Inf in offset
@@ -470,6 +486,7 @@ fit_long_read_model <- function(lr_counts, beta, covariates) {
 
     # P2 = exp(C * theta)
     probs <- exp(covariates %*% matrix(stats::coefficients(model), ncol = 1))
+    probs[!is.finite(probs)] <- 0
 
     list(probs = as.numeric(probs), model = model)
 }

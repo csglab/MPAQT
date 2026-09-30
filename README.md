@@ -31,54 +31,74 @@ Choose your preferred installation method:
 | Method | Best For | Instructions |
 |--------|----------|--------------|
 | **Local** | Development, customization | [Jump to section](#local-installation) |
-| **Docker** | Reproducibility, portability | [Jump to section](#docker) |
+| **Conda** | Simple environment management | [Jump to section](#conda) |
 | **Apptainer** | HPC clusters | [Jump to section](#apptainer) |
-| **Conda** | Simple environment management | [Jump to section](#conda-package) |
+| **Docker** | Reproducibility, portability | [Jump to section](#docker) |
 
 ---
 
 ### Local Installation
 
-#### Step 1: Install R and Compilation Dependencies
+#### Step 1: Install R and Dependencies
 
-```bash
-# Via conda (recommended)
-conda install -c conda-forge r-base cmake icu zlib
-```
-
-Or install R from [CRAN](https://cran.r-project.org/) and ensure `cmake`, `icu`, and `zlib` are available.
-
----
+Install R (>= 4.0.0) from [CRAN](https://cran.r-project.org/) with compilation tools (make, zlib, curl).
 
 #### Step 2: Install MPAQT R Package
 
 ```r
-# Install pak (recommended)
 install.packages("pak")
-
-# Install MPAQT from GitHub
 pak::pak("csglab/mpaqt2")
 ```
 
-Alternative with devtools:
-```r
-install.packages("devtools")
-devtools::install_github("csglab/mpaqt2")
+#### Step 3: Add CLI to PATH
+
+```bash
+export PATH="$PATH:$(Rscript -e 'cat(system.file("bin", package = "mpaqt"))')"
+mpaqt --help
+```
+
+#### Step 4: Install System Tools
+
+Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bustools](https://github.com/BUStools/bustools) (>= 0.43.1).
+
+Verify:
+```bash
+kallisto version
+bustools version
 ```
 
 ---
 
-#### Step 3: Install Required System Tools
+### Conda
 
 ```bash
-# Required for short-read processing
-conda install -c bioconda kallisto bustools
+conda create -n mpaqt -c csglab r-mpaqt
+conda activate mpaqt
+
+mpaqt --help
+# or
+R -e 'library(mpaqt)'
 ```
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **kallisto** | >= 0.50.1 | Short-read pseudoalignment |
-| **bustools** | >= 0.43.1 | BUS file processing |
+---
+
+### Apptainer
+
+For HPC clusters without Docker access:
+
+```bash
+# Pull image
+apptainer pull docker://csglab/mpaqt:2.0.0 
+
+# CLI usage
+apptainer exec mpaqt_2.0.0.sif mpaqt --help
+
+# R API usage
+apptainer exec mpaqt_2.0.0.sif R -e 'library(mpaqt)'
+
+# Run interactively
+apptainer shell mpaqt_2.0.0.sif
+```
 
 ---
 
@@ -100,36 +120,42 @@ docker run -it -v $(pwd):/data csglab/mpaqt:2.0.0
 
 ---
 
-### Apptainer
-
-For HPC clusters without Docker access:
-
-```bash
-# Pull image
-apptainer pull library://csglab/mpaqt:2.0.0
-
-# CLI usage
-apptainer exec mpaqt_2.0.0.sif mpaqt --help
-
-# R API usage
-apptainer exec mpaqt_2.0.0.sif R -e 'library(mpaqt)'
-
-# Run interactively
-apptainer shell mpaqt_2.0.0.sif
-```
-
----
-
-### Conda Package
-
-```bash
-# Install from csglab channel
-conda install -c csglab -c conda-forge -c bioconda r-mpaqt
-```
-
----
-
 ## Quick Start
+
+### Command Line Interface
+
+```bash
+# 1. Create index (run once)
+mpaqt index \
+  --annotation gencode.v44.gtf \
+  --transcriptome gencode.v44.transcripts.fa \
+  --output my_index.rds
+
+# 2. Process short reads
+mpaqt prepare-sr my_index.rds \
+  --fastq-r1 sample_R1.fastq.gz \
+  --fastq-r2 sample_R2.fastq.gz \
+  --output-dir results/
+
+# 3. Quantify
+mpaqt quant my_index.rds \
+  --sr-counts results/mpaqt.sr.rds \
+  --bias 3p \
+  --output results/mpaqt.quant.rds
+```
+
+Or, after index generation, run the full pipeline in one command:
+
+```bash
+mpaqt run my_index.rds \
+  --fastq-r1 sample_R1.fastq.gz \
+  --fastq-r2 sample_R2.fastq.gz \
+  --bias 3p \
+  --output-dir results/ \
+  --threads 4
+```
+
+---
 
 ### R Interface
 
@@ -164,26 +190,12 @@ tpm_values <- tpm(result)
 
 ---
 
-### Command Line Interface
-
-```bash
-mpaqt run my_index.rds \
-  --fastq-r1 sample_R1.fastq.gz \
-  --fastq-r2 sample_R2.fastq.gz \
-  --bias 3p \
-  --output-dir results/ \
-  --threads 8
-```
-
----
-
 ## Documentation
 
 Full documentation: **https://csglab.github.io/mpaqt2/**
 
 | Guide | Description |
 |-------|-------------|
-| [Get Started](https://csglab.github.io/mpaqt2/articles/mpaqt.html) | Package overview and concepts |
 | [Installation](https://csglab.github.io/mpaqt2/articles/installation.html) | Detailed installation guide |
 | [Bulk Workflow](https://csglab.github.io/mpaqt2/articles/bulk-workflow.html) | Complete bulk RNA-seq analysis |
 | [Single-Cell](https://csglab.github.io/mpaqt2/articles/single-cell-workflow.html) | Cluster-level quantification |

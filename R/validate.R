@@ -783,6 +783,26 @@ validate_normalize <- function(normalize) {
     invisible(TRUE)
 }
 
+#' Validate UMI Correction Timing
+#'
+#' @param umi_correction_timing When to normalize P matrices relative to
+#'   positional weighting
+#'
+#' @return Invisible TRUE if valid
+#' @keywords internal
+validate_umi_correction_timing <- function(umi_correction_timing) {
+    valid <- c("pre", "post")
+
+    if (!umi_correction_timing %in% valid) {
+        cli::cli_abort(c(
+            "Invalid {.arg umi_correction_timing}: {.val {umi_correction_timing}}",
+            "i" = "Must be one of: {.val {valid}}"
+        ))
+    }
+
+    invisible(TRUE)
+}
+
 # =============================================================================
 # Optional Requirement Functions
 # =============================================================================

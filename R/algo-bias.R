@@ -30,7 +30,7 @@ init_positional_bias <- function(distances, bias_type, n_bins) {
 
     # Create distance bins using quantiles
     dist_values <- distances[[dist_col]]
-    dist_values[is.na(dist_values)] <- median(dist_values, na.rm = TRUE)
+    dist_values[is.na(dist_values)] <- 1
 
     quantiles <- stats::quantile(
         dist_values,

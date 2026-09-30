@@ -26,7 +26,7 @@ RUN conda install -n base -c conda-forge mamba -y && \
 FROM debian:bookworm-slim
 
 LABEL maintainer="Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi"
-LABEL version="2.0.0"
+LABEL version="2.4.0"
 LABEL variant="stable"
 LABEL description="MPAQT - Multi-Platform Accurate Quantification of Transcripts"
 LABEL org.opencontainers.image.source="https://github.com/csglab/mpaqt2"

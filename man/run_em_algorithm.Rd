@@ -10,6 +10,7 @@ run_em_algorithm(
   lr_counts = NULL,
   positional_weights = NULL,
   bias_type = "3p",
+  post_weight_umi_correction = FALSE,
   max_iter = 100L,
   tolerance = 1e-04,
   use_prior = FALSE,
@@ -31,6 +32,9 @@ run_em_algorithm(
 \item{positional_weights}{Positional bias weights (optional)}
 
 \item{bias_type}{Type of positional bias ("3p" or "5p")}
+
+\item{post_weight_umi_correction}{Whether to normalize short-read
+probabilities after applying positional weights}
 
 \item{max_iter}{Maximum number of iterations}
 

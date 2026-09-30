@@ -29,6 +29,9 @@ dependencies:
 
   # CLI argument parsing
   - r-optparse
+  
+  - bioconductor-biostrings
+  - bioconductor-rtracklayer
 
   # External bioinformatics tools (required)
   - kallisto>=0.50.1

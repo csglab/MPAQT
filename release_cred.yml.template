@@ -1,6 +1,6 @@
 # MPAQT Release Credentials
 # =========================
-# Copy this file to: release-credentials.yml
+# Copy this file to: release_cred.yml
 #
 # How to get tokens:
 # - GitHub: Settings > Developer settings > Personal access tokens

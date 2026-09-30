@@ -2,7 +2,7 @@
 % Please edit documentation in R/process-short-read.R
 \name{extract_sc_ec_counts}
 \alias{extract_sc_ec_counts}
-\title{Extract Single-Cell EC Counts by Cluster}
+\title{Extract Single-Cell EC Counts by Cluster (Read-Level)}
 \usage{
 extract_sc_ec_counts(
   bus_txt_file,
@@ -24,12 +24,13 @@ extract_sc_ec_counts(
 
 \item{output_dir}{Output directory for saving results}
 
-\item{output_prefix}{Prefix for output RDS files (default: "mpaqt")}
+\item{output_prefix}{Prefix for output RDS files}
 }
 \value{
 List of mpaqt_counts_sr objects, one per cluster
 }
 \description{
-Extract Single-Cell EC Counts by Cluster
+Count reads per (barcode, EC) from BUS text output, then aggregate
+by cluster. No UMI deduplication.
 }
 \keyword{internal}
