@@ -3,7 +3,7 @@ package:
   version: "2.4.0"
 
 source:
-  git_url: https://github.com/saberiato/mpaqt2.git
+  git_url: https://github.com/csglab/MPAQT.git
   git_rev: main
 
 build:
@@ -66,7 +66,7 @@ test:
     - R -e "library(devtools)"
 
 about:
-  home: https://github.com/saberiato/mpaqt2
+  home: https://github.com/csglab/MPAQT
   license: MIT
   license_family: MIT
   license_file: LICENSE
@@ -76,8 +76,8 @@ about:
     integrates short-read and long-read sequencing data for improved accuracy.
     This development version includes tools for package development, testing,
     and documentation generation.
-  doc_url: https://saberiato.github.io/mpaqt2/
-  dev_url: https://github.com/saberiato/mpaqt2
+  doc_url: https://csglab.github.io/MPAQT/
+  dev_url: https://github.com/csglab/MPAQT
 
 extra:
   recipe-maintainers:
