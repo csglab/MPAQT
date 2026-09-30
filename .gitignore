@@ -1,3 +1,23 @@
-# Ignore directories
-RUNS/
-logs/
+# Archived source only; obtain reference data separately.
+/data/
+/RUNS/
+/reference/
+/references/
+/projects/
+/tmp/
+
+# Credentials, runtime output, and large build products
+.env
+.env.*
+!.env.example
+release-credentials.yml
+release_cred.yml
+*.log
+*.sif
+*.bam
+*.cram
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+.DS_Store

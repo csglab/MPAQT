@@ -1,0 +1,12 @@
+name: Repository hygiene
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: python3 .github/scripts/check_blob_sizes.py
