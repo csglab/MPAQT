@@ -3,7 +3,7 @@ package:
   version: "2.4.0"
 
 source:
-  git_url: https://github.com/csglab/mpaqt2.git
+  git_url: https://github.com/csglab/MPAQT_merged.git
   git_rev: v2.4.0
 
 build:
@@ -76,7 +76,7 @@ test:
     - R -e "library(devtools)"
 
 about:
-  home: https://github.com/csglab/mpaqt2
+  home: https://github.com/csglab/MPAQT_merged
   license: MIT
   license_family: MIT
   license_file: LICENSE
@@ -87,7 +87,7 @@ about:
     This development version includes tools for package development, testing,
     and documentation generation.
   doc_url: https://csglab.github.io/mpaqt2/
-  dev_url: https://github.com/csglab/mpaqt2
+  dev_url: https://github.com/csglab/MPAQT_merged
 
 extra:
   recipe-maintainers:

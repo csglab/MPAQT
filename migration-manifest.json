@@ -1,0 +1,371 @@
+{
+  "target": "csglab/MPAQT_merged",
+  "visibility": "private",
+  "created_utc": "2026-09-30T14:10:05.130993+00:00",
+  "snapshots": [
+    {
+      "source_repository": "csglab/MPAQT",
+      "source_ref": "origin/archive",
+      "source_commit": "01b56438e70fe8fc53f7ed01c51473375b2572a4",
+      "destination": "mpaqt-v0",
+      "import_commit": "1f63c9a811f3e2a58259ddc2f79c28a0c51fabc9",
+      "retained_files": 30,
+      "retained_bytes": 182297,
+      "excluded": [
+        {
+          "path": "RUNS/MPAQT_test.July-13-2023/SOX10_Day61.rep1.transcriptome.sqanti3_classification.filtered_lite_classification.txt",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "c532a0da2b24c9d207f886a7db6ab2e2060fe9bf"
+        },
+        {
+          "path": "RUNS/MPAQT_test.July-13-2023/covMx.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "a43f5c761f9f515a6c51d9ed7e9cbdf7bf88fcf4"
+        },
+        {
+          "path": "RUNS/MPAQT_test.July-13-2023/reads.ecs.counts.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "775db3d2324d8bdd13afa32207305901a69b43c3"
+        },
+        {
+          "path": "data/MAQC.TPMs.logFC.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "5d6b1d171922d33779d5603e24324f6052501903"
+        },
+        {
+          "path": "data/MAQC.TPMs.logFC.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "d4aeb094ceeaaa93d5e5af7d0289ece0b720f169"
+        },
+        {
+          "path": "data/MAQCA_1.SRR3670977.SRR3670978.SRR3670979.SRR3670980/GSM2202397_MAQCA-1_klout.txt",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "e5b338f7a071c6e5c038c29cd61b5f8233de3866"
+        },
+        {
+          "path": "data/MAQCA_1.SRR3670977.SRR3670978.SRR3670979.SRR3670980/abundance_transcripts.tsv",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "a326711e4a058ad4af945e83056748a79ff5b71c"
+        },
+        {
+          "path": "data/MAQCA_1.SRR3670977.SRR3670978.SRR3670979.SRR3670980/fit.tol=1e-04.itelim=100.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "25b4ff6277ed28ef6c89afe8702b9746111d0e56"
+        },
+        {
+          "path": "data/MAQCA_1.SRR3670977.SRR3670978.SRR3670979.SRR3670980/genes.results",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "ea2536f8e3879b8e966506f37c01602d4e1df909"
+        },
+        {
+          "path": "data/MAQCA_1.SRR3670977.SRR3670978.SRR3670979.SRR3670980/isoforms.results",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "b49e5da9b1c54168d79acb66e969f6ed705ed428"
+        },
+        {
+          "path": "data/MAQCA_1.SRR3670977.SRR3670978.SRR3670979.SRR3670980/quant.sf",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "4437c197def909a010d0422cd9a528d187f00fa5"
+        },
+        {
+          "path": "data/MAQCA_1.SRR3670977.SRR3670978.SRR3670979.SRR3670980/reads.ecs.counts.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "e8ab258ddd8e4f7ef2a71d9066b6c1c6bd074d45"
+        },
+        {
+          "path": "data/MAQCA_1.SRR3670977.SRR3670978.SRR3670979.SRR3670980/transcripts.txt",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "12d4d8f20ae080da6e6b643bde5e885cb80decde"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/GSM2202399_MAQCB-1_klout.txt",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "63bf3ddda4d95c3473ef7b12473e3e7fcb85ed55"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/abundance_transcripts.l_200.s_20.tsv",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "d73bafb07e77cb26e433b8763a95629169431160"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/abundance_transcripts.l_75.s_1.tsv",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "2a6ca955472e5a3be944e01dce15fe67e3b3fc50"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/fit.tol=1e-04.itelim=100.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "dbb89abf3e9bf4fbe283caba0a8ef606bad7835e"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/genes.results",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "f73da08eab56d9edb0304f05f6d4338207006706"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/isoforms.results",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "87ff528a7d907ee2e186c16649396848af438bda"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/quant.sf",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "205789313c26f704316fb7736e882645101cce24"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/reads.ecs.counts.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "1fbe1590b760d4517f3f37c997051ed12c79d7f9"
+        },
+        {
+          "path": "data/MAQCB_1.SRR3670985.SRR3670986.SRR3670987.SRR3670988/transcripts.txt",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "12d4d8f20ae080da6e6b643bde5e885cb80decde"
+        },
+        {
+          "path": "data/MDA.MB.231.sim.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "f7fb5ba2353c5dadb2296c1c6c79c54f96499920"
+        },
+        {
+          "path": "data/MDA.MB.231.sim.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "2436940ea7fe2b6eb89edd071c6a3452b3b9359f"
+        },
+        {
+          "path": "data/neurondiff.FL_TPMs.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "4099cc4e0336f409e15aaa63191d7dda76e8ba15"
+        },
+        {
+          "path": "data/neurondiff.FL_TPMs.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "c0ce4d47c20967bd26dbc0f43402b4f5f741cd75"
+        },
+        {
+          "path": "data/neurondiff.spikeins.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "cd90b04632fad12508d5777154b42168de7f0bf3"
+        },
+        {
+          "path": "data/neurondiff.spikeins.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "0115e8845aa2a0cbe83157d227c15ac6ab4ff662"
+        },
+        {
+          "path": "data/qPCR_MAQC.41598_2017_1617_MOESM2_ESM.xls",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "d8391f65c6c6728498f35d5641f2be8c7ca56d03"
+        },
+        {
+          "path": "data/rexp_sim_lst.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "8044f5a73790a266e9aaa4686fa8ef80302177ec"
+        },
+        {
+          "path": "data/rexp_sim_lst/rep1.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "631567a566d39075c73f7a817ae2dba167ef0726"
+        },
+        {
+          "path": "data/rexp_sim_lst/rep2.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "80ab0d35505b24b0098cc213fd0d25007a9a1ac2"
+        },
+        {
+          "path": "data/rexp_sim_lst/rep3.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "e1c3375e069899ecd2d610624a3085502a5890e3"
+        },
+        {
+          "path": "data/supplementary_data_table_1a.topfit.SOX10_Day41-hESC.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "e3aa93e68364fa75bebcc63702f79fc2c74130b5"
+        },
+        {
+          "path": "data/supplementary_data_table_1b.topfit.SOX10_Day61-SOX10_Day41.xlsx",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "780b04df7b94fe207b9f59f05be12c54d39a5e0f"
+        },
+        {
+          "path": "reference/P/P.July-20-2023.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "1ab73478399aa1837afc3cfb0b21780f9799953c"
+        },
+        {
+          "path": "reference/P/P.Oct-15-2021.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "7a9b06738622fab1002b92133ea50bdb044c9429"
+        },
+        {
+          "path": "reference/P/p_list.pmat_single.2.4_billion.Oct-15-2021.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "6d1e90fdf4541f7152ff29a96e3a63b171a29831"
+        },
+        {
+          "path": "reference/P/p_list.spikeins.June-10-2022.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "cfa2c2784e66d2616cb36218f64177e888eedf56"
+        },
+        {
+          "path": "reference/P/p_matrix.spikeins.June-10-2022.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "39109202ab51848ed916d4a57be12ecf386c91f1"
+        },
+        {
+          "path": "reference/P/p_rowSums.pmat_single.2.4_billion.Oct-15-2021.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "f8d7ffb08063e682cfd07b8226a24978aecdc62b"
+        },
+        {
+          "path": "reference/P/p_rowSums.spikeins.June-10-2022.Rds",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "1697be32c63189bbbb6ca45723a6cbd88cf47a18"
+        },
+        {
+          "path": "wiki/MPAQT.wiki",
+          "reason": "External gitlink; content is not included in the source Git tree",
+          "source_object": "a80faab91c0d0269395859ce5b7e045b5f8ad551"
+        },
+        {
+          "path": "workflow/MPAQT_workflow.pptx",
+          "reason": "Legacy presentation; workflow PNG retained",
+          "source_object": "ae6014e5c4061d4864e1af093265330ac0cd6414"
+        }
+      ],
+      "destination_commit": "b6f777efc15bde42c0b598ce004dd1f89f3164ba",
+      "repository_link_updates": []
+    },
+    {
+      "source_repository": "csglab/MPAQT",
+      "source_ref": "origin/main",
+      "source_commit": "fe5011b5bb0b861461d963573257809f7d45ade6",
+      "destination": "mpaqt-v1",
+      "import_commit": "af87cb28ff969cef710930c94fcebb3bc41a63e8",
+      "retained_files": 23,
+      "retained_bytes": 93752,
+      "excluded": [
+        {
+          "path": "references/gencode.v46.index.mpaqt",
+          "reason": "Legacy dataset, generated output, or reference index",
+          "source_object": "a2a526d8318386cfa7926d12e8b2c1ac4ac11e39"
+        }
+      ],
+      "destination_commit": "8d13cdcbe7112b217688001b73a45d408c46bf63",
+      "repository_link_updates": []
+    },
+    {
+      "source_repository": "csglab/mpaqt2",
+      "source_ref": "v2.0.0",
+      "source_commit": "47ac1489050fdf1d8c208ba43a80d515bdb24f52",
+      "destination": "v2.0.0",
+      "import_commit": "a84ecad51958f0bd88583ee6f62bfc4724413047",
+      "retained_files": 245,
+      "retained_bytes": 2034746,
+      "excluded": [
+        {
+          "path": "log.txt",
+          "reason": "Development log or internal planning document",
+          "source_object": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+        }
+      ],
+      "destination_commit": "a84ecad51958f0bd88583ee6f62bfc4724413047"
+    },
+    {
+      "source_repository": "csglab/mpaqt2",
+      "source_ref": "origin/mpaqt-cli",
+      "source_commit": "a1f466c1b66923a460bfcf5ebc6ddb9458816aa8",
+      "destination": "mpaqt-v2-cli",
+      "import_commit": "52f3c53db8bdd5f78e6ae02dced9e7678defe59d",
+      "retained_files": 258,
+      "retained_bytes": 2159402,
+      "excluded": [],
+      "destination_commit": "ff05af874b77dd809894de1f41cccae99f635c39",
+      "repository_link_updates": [
+        ".github/workflows/pkgdown.yml",
+        "DESCRIPTION",
+        "README.md",
+        "inst/apptainer/mpaqt-dev.def",
+        "inst/apptainer/mpaqt-full.def",
+        "inst/apptainer/mpaqt.def",
+        "inst/conda-recipe/meta-full.yaml",
+        "inst/conda-recipe/meta.yaml",
+        "inst/docker/Dockerfile",
+        "inst/docker/Dockerfile.dev",
+        "inst/docker/Dockerfile.full",
+        "man/mpaqt-package.Rd",
+        "vignettes/installation.Rmd",
+        "vignettes/package-structure.Rmd"
+      ]
+    },
+    {
+      "source_repository": "csglab/mpaqt2",
+      "source_ref": "origin/mpaqt-r",
+      "source_commit": "7cef1b97da1253c5f66bd0032820c0a71f3ab07a",
+      "destination": "mpaqt-v2-r",
+      "import_commit": "85863a8c53b9238fbcc9ed8a3424fe13b30e2006",
+      "retained_files": 258,
+      "retained_bytes": 2104400,
+      "excluded": [
+        {
+          "path": "design/2026-07-21-documentation-review-remediation-design.md",
+          "reason": "Development log or internal planning document",
+          "source_object": "5a7024019716747198404d1c33398b46a31c68e7"
+        },
+        {
+          "path": "design/2026-07-21-workflow-tutorials-design.md",
+          "reason": "Development log or internal planning document",
+          "source_object": "bbbb37fc8bd10014ed44f80724da7ef36b0e22d2"
+        }
+      ],
+      "destination_commit": "e8ba68b59e7cf53d251f610cd10b61a8f8d78a09",
+      "repository_link_updates": [
+        ".github/workflows/pkgdown.yml",
+        "DESCRIPTION",
+        "README.md",
+        "inst/apptainer/mpaqt-dev.def",
+        "inst/apptainer/mpaqt-full.def",
+        "inst/apptainer/mpaqt.def",
+        "inst/conda-recipe/meta-full.yaml",
+        "inst/conda-recipe/meta.yaml",
+        "inst/docker/Dockerfile",
+        "inst/docker/Dockerfile.dev",
+        "inst/docker/Dockerfile.full",
+        "man/mpaqt-package.Rd",
+        "vignettes/installation.Rmd",
+        "vignettes/package-structure.Rmd"
+      ]
+    },
+    {
+      "source_repository": "csglab/mpaqt2",
+      "source_ref": "v2.4.0",
+      "source_commit": "ccff2af44c9b16104bc171871d709e4c05e817c4",
+      "destination": "v2.4.0",
+      "import_commit": "b7a6c99837badecfc5740e9314e0e358789cd5b7",
+      "retained_files": 259,
+      "retained_bytes": 2113215,
+      "excluded": [],
+      "destination_commit": "b7a6c99837badecfc5740e9314e0e358789cd5b7"
+    },
+    {
+      "source_repository": "csglab/mpaqt2",
+      "source_ref": "origin/main",
+      "source_commit": "289635cc5316cef8b06a4c5d05f7942d215f5010",
+      "destination": "main",
+      "import_commit": "11baa9951ae6ef2af6df5555995b949e4bcd96df",
+      "retained_files": 268,
+      "retained_bytes": 2131408,
+      "excluded": []
+    },
+    {
+      "source_repository": "csglab/mpaqt2",
+      "source_ref": "origin/gh-pages",
+      "source_commit": "5c1a92c8501e84dcc143f709a1b104247e575d78",
+      "destination": "gh-pages",
+      "import_commit": "c2a10e94cd281a649cf4d4bbe6c1e825aa5795d7",
+      "retained_files": 204,
+      "retained_bytes": 3489825,
+      "excluded": []
+    }
+  ]
+}

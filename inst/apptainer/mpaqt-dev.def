@@ -6,7 +6,7 @@ From: continuumio/miniconda3:latest
     Version 2.4.0
     Variant dev
     Description MPAQT Dev - with development, testing, and profiling tools
-    org.opencontainers.image.source https://github.com/csglab/mpaqt2
+    org.opencontainers.image.source https://github.com/csglab/MPAQT_merged
 
 %files
     environment.yml /opt/environment.yml

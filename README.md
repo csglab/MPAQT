@@ -1,3 +1,5 @@
+> **Private migration review:** `csglab/MPAQT_merged`. See [migration notes](MIGRATION.md) for version branches, historical tags, excluded data, and publication status.
+
 # MPAQT <img src="man/figures/logo.png" align="right" height="139" alt="MPAQT logo" />
 
 <!-- badges: start -->
@@ -54,7 +56,7 @@ BiocManager::install(c("Biostrings", "rtracklayer"))
 
 ```r
 install.packages("pak")
-pak::pak("csglab/mpaqt2")
+pak::pak("csglab/MPAQT_merged")
 ```
 
 The source repository is currently private. This installation method requires
@@ -168,7 +170,7 @@ If you use MPAQT in your research, please cite:
 We welcome contributions! See our [Package Structure](https://csglab.github.io/mpaqt2/articles/package-structure.html) guide.
 
 Repository members can report issues at:
-https://github.com/csglab/mpaqt2/issues. If you do not have repository access,
+https://github.com/csglab/MPAQT_merged/issues. If you do not have repository access,
 contact the package maintainer listed in `DESCRIPTION`.
 
 ---

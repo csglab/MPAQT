@@ -10,7 +10,7 @@ require_command conda
 require_command rg
 
 if [[ -z "${GITHUB_PAT:-}" ]]; then
-    fail "GITHUB_PAT must be exported so pak can access the private csglab/mpaqt2 repository"
+    fail "GITHUB_PAT must be exported so pak can access the private csglab/MPAQT_merged repository"
 fi
 
 case_dir="$(reset_case_dir pak)"
@@ -43,7 +43,7 @@ conda create -n "$ENV_NAME" -y \
 
 log "Installing MPAQT from GitHub with pak"
 conda run --no-capture-output -n "$ENV_NAME" \
-    Rscript -e 'pak::pak("csglab/mpaqt2")'
+    Rscript -e 'pak::pak("csglab/MPAQT_merged")'
 
 conda run --no-capture-output -n "$ENV_NAME" Rscript -e '
     description <- utils::packageDescription("mpaqt")
@@ -61,7 +61,7 @@ conda run --no-capture-output -n "$ENV_NAME" \
     "$case_dir/toy.gtf" \
     "$case_dir/toy.fa" \
     "$case_dir/index-output" \
-    "pak:csglab/mpaqt2"
+    "pak:csglab/MPAQT_merged"
 
 [[ -s "$case_dir/index-output/PASS.txt" ]] ||
     fail "pak index smoke test did not create PASS.txt"
