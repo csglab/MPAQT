@@ -1,5 +1,5 @@
 # MPAQT
-> Multi-Platform Analysis and Quantification of Transcripts
+> Multi-Platform Aggregation and Quantification of Transcripts
 > —— v0.3.0
 
 :books: [Main Page](https://mpaqt.notion.site)
