@@ -14,7 +14,7 @@
     version <- utils::packageVersion(pkgname)
 
     packageStartupMessage(
-        "MPAQT: Multi-Platform Accurate Quantification of Transcripts\n",
+        "MPAQT: Multi-Platform Aggregation and Quantification of Transcripts\n",
         "Version: ", version, "\n",
         "Type ?mpaqt for help"
     )

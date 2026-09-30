@@ -28,7 +28,7 @@ FROM debian:bookworm-slim
 LABEL maintainer="Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi"
 LABEL version="2.4.0"
 LABEL variant="stable"
-LABEL description="MPAQT - Multi-Platform Accurate Quantification of Transcripts"
+LABEL description="MPAQT - Multi-Platform Aggregation and Quantification of Transcripts"
 LABEL org.opencontainers.image.source="https://github.com/csglab/MPAQT"
 
 # Copy the packed environment from builder
