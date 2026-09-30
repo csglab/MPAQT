@@ -1,5 +1,3 @@
-> **Private migration review:** `csglab/MPAQT_merged`. See [migration notes](MIGRATION.md) for version branches, historical tags, excluded data, and publication status.
-
 # MPAQT <img src="man/figures/logo.png" align="right" height="139" alt="MPAQT logo" />
 
 <!-- badges: start -->
@@ -10,23 +8,6 @@
 **M**ulti-**P**latform **A**ccurate **Q**uantification of **T**ranscripts
 
 MPAQT is an R package for RNA-seq transcript quantification that integrates short-read and long-read sequencing data for improved accuracy. It supports both bulk and single-cell RNA-seq analysis.
-
-| Branch | Contents |
-|---|---|
-| [`main`](https://github.com/csglab/MPAQT_merged/tree/main) | Latest imported version 2 code, including changes after v2.4.0 |
-| [`mpaqt-v0`](https://github.com/csglab/MPAQT_merged/tree/mpaqt-v0) | Original `MPAQT/archive`, without datasets and generated outputs |
-| [`mpaqt-v1`](https://github.com/csglab/MPAQT_merged/tree/mpaqt-v1) | Original `MPAQT/main`, without the reference index |
-| [`mpaqt-v2`](https://github.com/csglab/MPAQT_merged/tree/mpaqt-v2) | Version 2 migration snapshot, currently identical to `main` |
-| [`mpaqt-v2-cli`](https://github.com/csglab/MPAQT_merged/tree/mpaqt-v2-cli) | Preserved `mpaqt2/mpaqt-cli` snapshot |
-| [`mpaqt-v2-r`](https://github.com/csglab/MPAQT_merged/tree/mpaqt-v2-r) | Preserved `mpaqt2/mpaqt-r` snapshot |
-| [`gh-pages`](https://github.com/csglab/MPAQT_merged/tree/gh-pages) | Preserved documentation files; staging website publishing is disabled |
-
-Historical tags: [`v2.0.0`](https://github.com/csglab/MPAQT_merged/tree/v2.0.0) and [`v2.4.0`](https://github.com/csglab/MPAQT_merged/tree/v2.4.0).
-They were recreated from the original tagged contents on clean history; the originals were not moved.
-The CLI and R branches preserve earlier snapshots, not additional unmerged features beyond the imported `main`.
-
-To review this repository's code, use the GitHub installation instructions below.
-Conda and Apptainer instructions refer to existing published distributions. Documentation links continue to open the original documentation site during private review.
 
 **Documentation**: [csglab.github.io/mpaqt2](https://csglab.github.io/mpaqt2/)
 
@@ -73,7 +54,7 @@ BiocManager::install(c("Biostrings", "rtracklayer"))
 
 ```r
 install.packages("pak")
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/mpaqt2")
 ```
 
 The source repository is currently private. This installation method requires
@@ -187,7 +168,7 @@ If you use MPAQT in your research, please cite:
 We welcome contributions! See our [Package Structure](https://csglab.github.io/mpaqt2/articles/package-structure.html) guide.
 
 Repository members can report issues at:
-https://github.com/csglab/MPAQT_merged/issues. If you do not have repository access,
+https://github.com/csglab/mpaqt2/issues. If you do not have repository access,
 contact the package maintainer listed in `DESCRIPTION`.
 
 ---
