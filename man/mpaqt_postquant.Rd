@@ -15,7 +15,7 @@ mpaqt_postquant(
   normalize = "tpm",
   max_iter = 100L,
   tolerance = 1e-04,
-  prior_start = 25L,
+  prior_start = 50L,
   convergence_start = 25L,
   compute_uncertainty = FALSE,
   verbose = TRUE

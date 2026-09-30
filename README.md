@@ -18,9 +18,9 @@ MPAQT is an R package for RNA-seq transcript quantification that integrates shor
 - **Multi-platform integration**: Combine Illumina short-reads with PacBio/ONT long-reads
 - **Bulk and single-cell**: Unified API for both analysis types
 - **Positional bias correction**: Account for 3' or 5' sequencing biases
-- **Uncertainty quantification**: Bootstrap-based standard errors
+- **Prior integration**: Incorporate custom transcript-specific priors into
+  abundance estimation
 - **Flexible inputs**: Start from FASTQ or pre-computed counts
-- **Command-line interface**: Shell-friendly workflow automation
 
 ---
 
@@ -43,6 +43,14 @@ Choose your preferred installation method:
 
 Install R (>= 4.0.0) from [CRAN](https://cran.r-project.org/) with compilation tools (make, zlib, curl).
 
+Install the Bioconductor packages required by `mpaqt_index()`:
+
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install(c("Biostrings", "rtracklayer"))
+```
+
 #### Step 2: Install MPAQT R Package
 
 ```r
@@ -50,14 +58,10 @@ install.packages("pak")
 pak::pak("csglab/mpaqt2")
 ```
 
-#### Step 3: Add CLI to PATH
+The source repository is currently private. This installation method requires
+repository access and GitHub credentials configured for `pak`.
 
-```bash
-export PATH="$PATH:$(Rscript -e 'cat(system.file("bin", package = "mpaqt"))')"
-mpaqt --help
-```
-
-#### Step 4: Install System Tools
+#### Step 3: Install System Tools
 
 Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bustools](https://github.com/BUStools/bustools) (>= 0.43.1).
 
@@ -72,11 +76,11 @@ bustools version
 ### Conda
 
 ```bash
-conda create -n mpaqt -c csglab r-mpaqt
+conda create -n mpaqt \
+  -c csglab -c conda-forge -c bioconda \
+  r-mpaqt
 conda activate mpaqt
 
-mpaqt --help
-# or
 R -e 'library(mpaqt)'
 ```
 
@@ -89,9 +93,6 @@ For HPC clusters without Docker access:
 ```bash
 # Pull image
 apptainer pull docker://csglab/mpaqt:2.0.0 
-
-# CLI usage
-apptainer exec mpaqt_2.0.0.sif mpaqt --help
 
 # R API usage
 apptainer exec mpaqt_2.0.0.sif R -e 'library(mpaqt)'
@@ -108,9 +109,6 @@ apptainer shell mpaqt_2.0.0.sif
 # Pull image
 docker pull csglab/mpaqt:2.0.0
 
-# CLI usage
-docker run -v $(pwd):/data csglab/mpaqt:2.0.0 mpaqt --help
-
 # R API usage
 docker run -v $(pwd):/data csglab/mpaqt:2.0.0 R -e 'library(mpaqt)'
 
@@ -122,42 +120,7 @@ docker run -it -v $(pwd):/data csglab/mpaqt:2.0.0
 
 ## Quick Start
 
-### Command Line Interface
-
-```bash
-# 1. Create index (run once)
-mpaqt index \
-  --annotation gencode.v44.gtf \
-  --transcriptome gencode.v44.transcripts.fa \
-  --output my_index.rds
-
-# 2. Process short reads
-mpaqt prepare-sr my_index.rds \
-  --fastq-r1 sample_R1.fastq.gz \
-  --fastq-r2 sample_R2.fastq.gz \
-  --output-dir results/
-
-# 3. Quantify
-mpaqt quant my_index.rds \
-  --sr-counts results/mpaqt.sr.rds \
-  --bias 3p \
-  --output results/mpaqt.quant.rds
-```
-
-Or, after index generation, run the full pipeline in one command:
-
-```bash
-mpaqt run my_index.rds \
-  --fastq-r1 sample_R1.fastq.gz \
-  --fastq-r2 sample_R2.fastq.gz \
-  --bias 3p \
-  --output-dir results/ \
-  --threads 4
-```
-
----
-
-### R Interface
+### R API
 
 ```r
 library(mpaqt)
@@ -199,7 +162,6 @@ Full documentation: **https://csglab.github.io/mpaqt2/**
 | [Installation](https://csglab.github.io/mpaqt2/articles/installation.html) | Detailed installation guide |
 | [Bulk Workflow](https://csglab.github.io/mpaqt2/articles/bulk-workflow.html) | Complete bulk RNA-seq analysis |
 | [Single-Cell](https://csglab.github.io/mpaqt2/articles/single-cell-workflow.html) | Cluster-level quantification |
-| [CLI Reference](https://csglab.github.io/mpaqt2/articles/cli-reference.html) | Command-line interface |
 | [API Reference](https://csglab.github.io/mpaqt2/reference/index.html) | All functions |
 
 ---
@@ -208,7 +170,7 @@ Full documentation: **https://csglab.github.io/mpaqt2/**
 
 If you use MPAQT in your research, please cite:
 
-> Apostolides, M., Choi, B., Navickas, A., Saberi, A., Soto, L. M., Goodarzi, H., & Najafabadi, H. S. (2024). Accurate isoform quantification by joint short-and long-read RNA-sequencing. *BioRxiv*. https://doi.org/10.1101/2024.07.11.603067
+> Apostolides, M., Choi, B., Navickas, A., Saberi, A., Soto, L. M., Goodarzi, H., & Najafabadi, H. S. (2024). Accurate isoform quantification by joint short- and long-read RNA sequencing. *BioRxiv*. https://doi.org/10.1101/2024.07.11.603067
 
 ---
 
@@ -216,7 +178,9 @@ If you use MPAQT in your research, please cite:
 
 We welcome contributions! See our [Package Structure](https://csglab.github.io/mpaqt2/articles/package-structure.html) guide.
 
-Report issues at: https://github.com/csglab/mpaqt2/issues
+Repository members can report issues at:
+https://github.com/csglab/mpaqt2/issues. If you do not have repository access,
+contact the package maintainer listed in `DESCRIPTION`.
 
 ---
 

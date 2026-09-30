@@ -36,11 +36,13 @@ install.packages("pak")
 pak::pak("csglab/mpaqt2")
 ```
 
+The source repository is currently private. GitHub installation requires
+repository access and credentials configured for `pak`.
+
 pak will automatically:
 
-- Install all required R package dependencies from CRAN
-- Prompt you to install Bioconductor packages if needed
-- Handle version conflicts gracefully
+- Resolve and install required dependencies from configured repositories
+- Report dependency and version conflicts
 
 ## Alternative: devtools Installation
 
@@ -53,6 +55,9 @@ install.packages("devtools")
 # Install MPAQT from GitHub
 devtools::install_github("csglab/mpaqt2")
 ```
+
+This method also requires access to the private source repository and
+configured GitHub credentials.
 
 ## Installing from Local Source
 
@@ -84,15 +89,15 @@ These packages are installed automatically when you install MPAQT:
 | `rlang` | Error handling and metaprogramming |
 | `stringr` | String manipulation |
 | `purrr` | Functional programming |
-| `optparse` | Command-line argument parsing |
 
 ### Optional Bioconductor Packages
 
 These packages are needed for specific features:
 
-#### For Transcriptome Extraction (Index Creation from Genome)
+#### For All Index Creation
 
-If you want to create an index from a genome FASTA instead of a transcriptome FASTA:
+Every `mpaqt_index()` pathway requires Biostrings for transcript sequences and
+rtracklayer for GTF annotation parsing:
 
 ```r
 if (!require("BiocManager", quietly = TRUE))
@@ -100,12 +105,24 @@ if (!require("BiocManager", quietly = TRUE))
 
 BiocManager::install(c(
     "Biostrings",
-    "rtracklayer",
+    "rtracklayer"
+))
+```
+
+#### Additional Packages for Transcriptome Extraction from a Genome
+
+If you want to extract the transcriptome from a BSgenome object or package
+instead of supplying a transcriptome FASTA, also install:
+
+```r
+BiocManager::install(c(
     "GenomicRanges",
-    "IRanges",
     "BSgenome"
 ))
 ```
+
+Install the matching organism-specific BSgenome package separately, for
+example `BSgenome.Hsapiens.UCSC.hg38`.
 
 #### For Long-Read Processing (FLNC Pathway)
 
@@ -151,16 +168,16 @@ The easiest way to install system tools is using conda:
 
 ```bash
 # Create a new environment (optional but recommended)
-conda create -n mpaqt python=3.10
+conda create -n mpaqt -c conda-forge -c bioconda python=3.10
 
 # Activate the environment
 conda activate mpaqt
 
 # Install required tools
-conda install -c bioconda kallisto bustools
+conda install -c conda-forge -c bioconda kallisto bustools
 
 # Install optional tools (for long-read processing)
-conda install -c bioconda minimap2 samtools
+conda install -c conda-forge -c bioconda minimap2 samtools
 ```
 
 ### Installing via Mamba (Faster)
@@ -168,7 +185,7 @@ conda install -c bioconda minimap2 samtools
 If you have mamba installed:
 
 ```bash
-mamba install -c bioconda kallisto bustools minimap2 samtools
+mamba install -c conda-forge -c bioconda kallisto bustools minimap2 samtools
 ```
 
 ### Manual Installation
@@ -189,15 +206,23 @@ Ensure all tools are available in your `PATH`.
 
 ## Pre-built Containers and Packages
 
-Instead of installing manually, you can use pre-built containers or conda packages that include MPAQT and all dependencies.
+Instead of installing manually, you can use a verified pre-built container or
+Conda package. Each artifact includes the dependencies for its stated variant.
 
-### Available Variants
+The published artifacts listed below contain MPAQT 2.0.0. The current source
+package and this documentation are version 2.4.0; install from source when you
+need the current R API.
 
-| Variant | Tag/Package | Description | Use When |
-|---------|-------------|-------------|----------|
-| **stable** | `2.0.0` / `r-mpaqt` | Core dependencies only (kallisto, bustools) | Standard short-read workflows |
-| **full** | `2.0.0-full` / `r-mpaqt-full` | Includes minimap2, samtools, Bioconductor (bambu, Biostrings, etc.) | Long-read FLNC processing, transcriptome extraction |
-| **dev** | `2.0.0-dev` / `r-mpaqt-dev` | Includes devtools, testthat, pkgdown | Development and testing |
+### Verified Published Variants
+
+| Variant | Verified distribution | Description | Use When |
+|---------|-----------------------|-------------|----------|
+| **stable** | Docker `2.0.0`, Apptainer `2.0.0`, Conda `r-mpaqt` 2.0.0 | Core dependencies only (kallisto, bustools) | Standard short-read workflows |
+| **full** | Apptainer `2.0.0-full` | Includes minimap2, samtools, and Bioconductor packages | Long-read FLNC processing and transcriptome extraction |
+| **dev** | Apptainer `2.0.0-dev` | Includes development and documentation tools | Development and testing |
+
+Only commands for artifacts whose current publication was verified are shown
+below.
 
 ### Docker
 
@@ -205,13 +230,6 @@ Instead of installing manually, you can use pre-built containers or conda packag
 # Stable (recommended for most users)
 docker pull csglab/mpaqt:2.0.0
 docker run -it -v $(pwd):/data csglab/mpaqt:2.0.0
-
-# Full (with all optional dependencies)
-docker pull csglab/mpaqt:2.0.0-full
-docker run -it -v $(pwd):/data csglab/mpaqt:2.0.0-full
-
-# Development
-docker pull csglab/mpaqt:2.0.0-dev
 ```
 
 ### Apptainer (for HPC)
@@ -245,21 +263,17 @@ apptainer pull library://csglab/mpaqt/mpaqt:2.0.0-dev
 
 ```bash
 # Stable
-conda create -n mpaqt -c csglab r-mpaqt
+conda create -n mpaqt \
+  -c csglab -c conda-forge -c bioconda \
+  r-mpaqt
 conda activate mpaqt
-
-# Full (includes minimap2, samtools, Bioconductor packages)
-conda create -n mpaqt-full -c csglab r-mpaqt-full
-
-# Development (includes devtools, testthat, etc.)
-conda create -n mpaqt-dev -c csglab r-mpaqt-dev
 ```
 
 ### Which Variant Should I Use?
 
 - **stable**: You only need short-read quantification, or you're providing pre-computed long-read counts
-- **full**: You need to process raw FLNC FASTQ files, or create indexes from genome FASTA files
-- **dev**: You're contributing to MPAQT or running the test suite
+- **full**: You use the verified Apptainer image to process raw FLNC FASTQ files or extract a transcriptome from a BSgenome reference
+- **dev**: You use the verified Apptainer image for development or testing
 
 ---
 
@@ -280,18 +294,13 @@ packageVersion("mpaqt")
 From R:
 
 ```r
-library(mpaqt)
-
-# Check kallisto
-get_tool_version("kallisto")
-
-# Check bustools
-get_tool_version("bustools")
-
-# Check optional tools
-get_tool_version("minimap2")
-get_tool_version("samtools")
+# Locate required and optional executables
+Sys.which(c("kallisto", "bustools", "minimap2", "samtools"))
 ```
+
+An empty path means that the executable is not available on `PATH`. Use the
+commands below to inspect installed versions.
+
 From the command line:
 
 ```bash
@@ -346,12 +355,15 @@ conda activate mpaqt
 If you encounter version conflicts with Bioconductor packages:
 
 ```r
-# Update Bioconductor
-BiocManager::install(version = "3.18")  # Use latest stable version
+# Install or update packages for the Bioconductor release compatible with R
+BiocManager::install()
 
 # Then reinstall MPAQT
 pak::pak("csglab/mpaqt2")
 ```
+
+This source-installation command requires access to the private source
+repository and GitHub credentials configured for `pak`.
 
 ### gpboost Installation Issues
 
@@ -374,7 +386,7 @@ install.packages("gpboost")
 If installation runs out of memory:
 
 ```r
-# Increase the number of connections
+# Reduce parallel installation jobs to lower memory use
 options(Ncpus = 1)
 
 # Or install packages one at a time
@@ -395,6 +407,9 @@ install.packages("pak")
 pak::pak("csglab/mpaqt2")
 ```
 
+This source-installation command requires access to the private source
+repository and GitHub credentials configured for `pak`.
+
 Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bustools](https://github.com/BUStools/bustools) (>= 0.43.1).
 
 ### Full Setup (With Long-Read Processing)
@@ -404,6 +419,9 @@ Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bust
 pak::pak("csglab/mpaqt2")
 BiocManager::install(c("Biostrings", "rtracklayer", "bambu", "BSgenome"))
 ```
+
+This source-installation command requires access to the private source
+repository and GitHub credentials configured for `pak`.
 
 Also install [minimap2](https://github.com/lh3/minimap2) and [samtools](https://github.com/samtools/samtools).
 
@@ -417,34 +435,32 @@ Run this complete checklist to verify your MPAQT installation:
 library(mpaqt)
 cat("MPAQT version:", as.character(packageVersion("mpaqt")), "\n")
 
-# 2. Check required system tools
-cat("\nRequired tools:\n")
-check_kallisto()
-check_bustools()
+# 2. Check required and optional system tools
+tools <- c("kallisto", "bustools", "minimap2", "samtools")
+tool_paths <- Sys.which(tools)
+print(data.frame(
+  tool = tools,
+  available = nzchar(tool_paths),
+  path = unname(tool_paths),
+  row.names = NULL
+))
 
-# 3. Check optional tools (only needed for FLNC processing)
-cat("\nOptional tools:\n")
-tryCatch(check_minimap2(), error = function(e) message("minimap2: not found (optional)"))
-tryCatch(check_samtools(), error = function(e) message("samtools: not found (optional)"))
-
-# 4. Check optional Bioconductor packages
+# 3. Check optional Bioconductor packages
 cat("\nOptional packages:\n")
 cat("Biostrings:", requireNamespace("Biostrings", quietly = TRUE), "\n")
 cat("rtracklayer:", requireNamespace("rtracklayer", quietly = TRUE), "\n")
 cat("bambu:", requireNamespace("bambu", quietly = TRUE), "\n")
 ```
 
-**Expected output for minimal setup:**
+**Illustrative output for a source installation with only required tools:**
 ```
-MPAQT version: 0.x.x
+MPAQT version: 2.4.0
 
-Required tools:
-✓ kallisto (0.50.1)
-✓ bustools (0.43.2)
-
-Optional tools:
-minimap2: not found (optional)
-samtools: not found (optional)
+     tool available               path
+ kallisto      TRUE /path/to/kallisto
+ bustools      TRUE /path/to/bustools
+ minimap2     FALSE
+ samtools     FALSE
 
 Optional packages:
 Biostrings: FALSE
@@ -459,4 +475,3 @@ bambu: FALSE
 After installation:
 
 - Follow the [Bulk Workflow](bulk-workflow.html) for your first analysis
-- Check the [CLI Reference](cli-reference.html) if you prefer command-line usage

@@ -1,8 +1,8 @@
 ---
-title: "Package Structure"
+title: "Package Structure and Development Guide"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Package Structure}
+  %\VignetteIndexEntry{Package Structure and Development Guide}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -10,473 +10,262 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  eval = FALSE
+  comment = "#>"
 )
 ```
 
-This document describes the internal architecture of MPAQT for developers and maintainers. Understanding this structure will help you contribute to the package or extend its functionality.
+This article describes the current MPAQT source layout, public R API, S3
+objects, and development workflow. Function signatures and object fields below
+correspond to package version 2.4.0.
 
-## High-Level Architecture
+## Repository Layout
 
-```
-MPAQT Package Architecture
-==========================
-
-    User Interface Layer
-    ┌─────────────────────────────────────────────────────────────┐
-    │                                                             │
-    │   R API                          CLI (inst/bin/mpaqt)       │
-    │   - mpaqt_index()                - mpaqt index              │
-    │   - mpaqt_prepare_short_reads()  - mpaqt prepare-sr         │
-    │   - mpaqt_prepare_long_reads()   - mpaqt prepare-lr         │
-    │   - mpaqt_quant()                - mpaqt quant              │
-    │                                                             │
-    └───────────────────────────┬─────────────────────────────────┘
-                                │
-    Processing Layer            │
-    ┌───────────────────────────┴─────────────────────────────────┐
-    │                                                             │
-    │   Short-Read Processing      Long-Read Processing           │
-    │   (process-short-read.R)     (process-long-read.R)          │
-    │                                                             │
-    │   Pre-Quantification         Post-Quantification            │
-    │   (quant-pre.R)              (quant-post.R)                 │
-    │                                                             │
-    └───────────────────────────┬─────────────────────────────────┘
-                                │
-    Algorithm Layer             │
-    ┌───────────────────────────┴─────────────────────────────────┐
-    │                                                             │
-    │   EM Algorithm    Newton-Raphson    Prior Models    Bias    │
-    │   (algo-em.R)     (algo-newton.R)   (algo-prior.R)  Corr.   │
-    │                                                     (algo-  │
-    │                                                     bias.R) │
-    └───────────────────────────┬─────────────────────────────────┘
-                                │
-    Infrastructure Layer        │
-    ┌───────────────────────────┴─────────────────────────────────┐
-    │                                                             │
-    │   System Commands    Kallisto/Bustools    Minimap2/Bambu    │
-    │   (infra-system.R)   (infra-kallisto.R)   (infra-minimap2.R │
-    │                                            infra-bambu.R)   │
-    └─────────────────────────────────────────────────────────────┘
+```text
+mpaqt2/
+├── R/                         # Package source
+├── tests/testthat/            # Unit and integration tests
+├── vignettes/                 # Source articles
+├── man/                       # Generated Rd documentation
+├── inst/
+│   ├── apptainer/             # Apptainer build assets
+│   ├── conda/                 # Conda environments and setup scripts
+│   ├── conda-recipe/          # Conda package recipes
+│   └── docker/                # Container build assets
+├── DESCRIPTION                # Package metadata and dependencies
+├── NAMESPACE                  # Generated exports and imports
+└── _pkgdown.yml               # Website navigation and reference groups
 ```
 
----
+The local `docs/` directory is ignored build output. The pkgdown workflow
+builds that directory and publishes it to the `gh-pages` branch; edit the
+README and vignette sources instead of generated HTML.
 
-## R/ Directory Organization
+## R Source Organization
 
-The `R/` directory contains 21 files organized by function:
+Files in `R/` are grouped by responsibility:
 
-### API Layer (User-Facing Functions)
+| Files | Responsibility |
+|-------|----------------|
+| `api-index.R`, `api-quant.R` | Main exported index and quantification entry points |
+| `process-short-read.R`, `process-long-read.R` | Input-path detection and count preparation |
+| `quant-pre.R`, `quant-post.R` | Positional-bias prequantification and final quantification |
+| `algo-bias.R`, `algo-em.R`, `algo-newton.R`, `algo-prior.R` | Numerical algorithms and prior fitting |
+| `class-index.R`, `class-counts.R`, `class-result.R` | S3 constructors, validation-facing methods, and accessors |
+| `infra-kallisto.R`, `infra-minimap2.R`, `infra-bambu.R`, `infra-system.R` | External-tool wrappers |
+| `extract-transcriptome.R`, `validate.R` | Reference extraction and shared validation |
+| `mpaqt-package.R`, `zzz.R` | Package-level documentation and initialization |
 
-| File | Functions | Description |
-|------|-----------|-------------|
-| `api-index.R` | `mpaqt_index()`, `mpaqt_read_index()` | Index creation and I/O |
-| `api-quant.R` | `mpaqt_quant()`, `mpaqt_quant_bulk()`, `mpaqt_quant_sc()` | Main quantification entry points |
+External commands should remain behind the `infra-*` wrappers. Primary workflow
+functions use the `mpaqt_*` prefix. Public accessors and exported `require_*()`
+dependency checks use descriptive names, while internal validators and tool
+checks use `validate_*()` and `check_*()`.
 
-These files contain the primary user-facing functions. They orchestrate the workflow by calling processing, algorithm, and infrastructure functions.
+## Public Workflow
 
-### Class Definitions
+The main object flow is:
 
-| File | Classes | Description |
-|------|---------|-------------|
-| `class-index.R` | `mpaqt_index` | Reference index with transcripts, genes, EC mappings |
-| `class-counts.R` | `mpaqt_counts_sr`, `mpaqt_counts_lr` | Short-read and long-read count containers |
-| `class-result.R` | `mpaqt_quant_result` | Quantification results with TPM, abundances, uncertainty |
+```text
+mpaqt_index()
+    -> mpaqt_index
 
-All classes are S3 classes with constructor functions (`new_*`), print methods, summary methods, and subsetting operators.
+mpaqt_prepare_short_reads() / mpaqt_prepare_short_reads_sc()
+    -> mpaqt_counts_sr or a named list of those objects
 
-### Processing Layer
+mpaqt_prepare_long_reads() / mpaqt_prepare_long_reads_sc()
+    -> mpaqt_counts_lr or a named list of those objects
 
-| File | Functions | Description |
-|------|-----------|-------------|
-| `process-short-read.R` | `mpaqt_prepare_short_reads()`, `mpaqt_prepare_short_reads_sc()` | FASTQ to EC counts |
-| `process-long-read.R` | `mpaqt_prepare_long_reads()`, `mpaqt_prepare_long_reads_sc()` | FASTQ/counts to transcript counts |
-| `quant-pre.R` | `mpaqt_prequant()` | Pre-quantification (bias estimation) |
-| `quant-post.R` | `mpaqt_postquant()` | Post-quantification (EM algorithm) |
-
-### Algorithm Layer (Internal)
-
-| File | Functions | Description |
-|------|-----------|-------------|
-| `algo-em.R` | `run_em_algorithm()` | Core EM loop with convergence checking |
-| `algo-newton.R` | `compute_newton_update()` | Newton-Raphson optimization step |
-| `algo-prior.R` | `fit_prior_model_gpboost()`, `fit_prior_model_lme4()` | Mixed-effects prior models |
-| `algo-bias.R` | `init_positional_bias()`, `optimize_positional_weights()` | 3'/5' positional bias correction |
-
-These files are marked as `@keywords internal` and are not exported.
-
-### Infrastructure Layer (Internal)
-
-| File | Functions | Description |
-|------|-----------|-------------|
-| `infra-system.R` | `run_system_command()` | Wrapper for system2() with logging |
-| `infra-kallisto.R` | `run_kallisto_index()`, `run_kallisto_bus()` | Kallisto/bustools wrappers |
-| `infra-minimap2.R` | `run_minimap2_lr()`, `check_minimap2()` | Minimap2 wrappers |
-| `infra-bambu.R` | `run_bambu()`, `check_bambu()` | Bambu quantification wrappers |
-
-### Utility Files
-
-| File | Functions | Description |
-|------|-----------|-------------|
-| `validate.R` | `validate_*()`, `check_*()` | Input validation and tool checking |
-| `extract-transcriptome.R` | `extract_transcriptome_from_gtf()` | Transcriptome extraction from genome |
-
-### Package Infrastructure
-
-| File | Purpose |
-|------|---------|
-| `mpaqt-package.R` | Package-level documentation and imports |
-| `zzz.R` | `.onLoad()` and `.onAttach()` hooks |
-
----
-
-## Data Flow
-
-### Bulk Workflow Data Flow
-
-```
-                     GTF + FASTA/Genome
-                            │
-                            ▼
-                    ┌───────────────┐
-                    │ mpaqt_index() │
-                    └───────┬───────┘
-                            │
-                            ▼
-                      mpaqt_index
-                       (S3 object)
-                            │
-          ┌─────────────────┼─────────────────┐
-          │                 │                 │
-          ▼                 │                 ▼
-┌─────────────────┐         │      ┌─────────────────┐
-│ mpaqt_prepare_  │         │      │ mpaqt_prepare_  │
-│ short_reads()   │         │      │ long_reads()    │
-└────────┬────────┘         │      └────────┬────────┘
-         │                  │               │
-         ▼                  │               ▼
-  mpaqt_counts_sr           │        mpaqt_counts_lr
-         │                  │               │
-         └──────────────────┼───────────────┘
-                            │
-                            ▼
-                    ┌───────────────┐
-                    │ mpaqt_quant() │
-                    └───────┬───────┘
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-              ▼                           ▼
-       mpaqt_prequant()           mpaqt_postquant()
-       (bias estimation)          (EM algorithm)
-              │                           │
-              └─────────────┬─────────────┘
-                            │
-                            ▼
-                   mpaqt_quant_result
-                            │
-               ┌────────────┼────────────┐
-               │            │            │
-               ▼            ▼            ▼
-            tpm()    abundances()   uncertainty()
+mpaqt_quant() / mpaqt_quant_sc()
+    -> mpaqt_quant_result or a named list of result objects
 ```
 
----
+For positional-bias workflows, `mpaqt_quant()` calls `mpaqt_prequant()` and
+then passes its `mpaqt_prequant` object to `mpaqt_postquant()`. Users can call
+the two phases directly when they need to save or reuse estimated weights.
 
-## S3 Class Hierarchy
+## S3 Object Layouts
 
-### mpaqt_index
+All primary objects inherit from `list`; summary information that is not a
+list component is stored as an attribute.
+
+### `mpaqt_index`
 
 ```r
-mpaqt_index
-├── transcripts      # Character vector of transcript IDs
-├── genes            # Character vector of gene IDs
-├── gene_map         # Named vector: transcript -> gene
-├── ec_ids           # Equivalence class IDs
-├── p_matrices       # List of P matrices for each EC
-├── distances        # Transcript length information
-├── covariates       # Optional covariate data
-├── kallisto_index   # Path to kallisto index binary
-├── metadata         # List with creation info
-└── class: "mpaqt_index"
+list(
+  transcripts = character(),
+  genes = character(),
+  ec_ids = character(),
+  p_matrices = list(),
+  ec_counts = numeric(),
+  covariates = matrix(),
+  distances = data.table::data.table(),
+  t2g_matrix = Matrix::sparseMatrix(),
+  g2t_matrix = Matrix::sparseMatrix(),
+  t2g_normalized = Matrix::sparseMatrix(),
+  kallisto_index = NULL,
+  gtf_annotation = NULL,
+  transcriptome_seqs = NULL,
+  kallisto_binary = NULL
+)
 ```
 
-### mpaqt_counts_sr
+`p_matrices` is a list with one data table per transcript. Each table stores
+the one-based EC row indices in `i`, design/exposure values in `x`, and the
+corresponding `dist_5p` and `dist_3p` values. Index attributes include
+`n_transcripts`, `n_genes`, `n_ec`, `created`, `mpaqt_version`, and `bundled`.
+Optional components can be `NULL`.
+
+### `mpaqt_counts_sr`
 
 ```r
-mpaqt_counts_sr
-├── counts           # Sparse matrix: EC x samples
-├── ec_ids           # Matching EC IDs
-├── transcripts      # Transcript IDs from index
-├── metadata         # Processing information
-└── class: c("mpaqt_counts_sr", "mpaqt_counts")
+list(
+  counts = numeric(),       # named EC-count vector
+  technology = "bulk",     # bulk, 10xv2, 10xv3, or 10xv4
+  sample_id = NULL
+)
 ```
 
-### mpaqt_counts_lr
+Its classes are `mpaqt_counts_sr`, `mpaqt_counts`, and `list`. Attributes
+include `n_reads`, `n_ec`, and `created`.
+
+### `mpaqt_counts_lr`
 
 ```r
-mpaqt_counts_lr
-├── counts           # Matrix: transcript x samples
-├── transcripts      # Transcript IDs
-├── metadata         # Processing information
-└── class: c("mpaqt_counts_lr", "mpaqt_counts")
+list(
+  counts = numeric(),       # named transcript-count vector
+  sample_id = NULL
+)
 ```
 
-### mpaqt_quant_result
+Its classes are `mpaqt_counts_lr`, `mpaqt_counts`, and `list`. Attributes
+include `n_reads`, `n_transcripts`, and `created`.
+
+### `mpaqt_prequant`
 
 ```r
-mpaqt_quant_result
-├── abundances       # Numeric vector of abundances
-├── tpm              # TPM-normalized values
-├── transcripts      # Transcript IDs
-├── genes            # Gene IDs
-├── log_likelihood   # Final log-likelihood
-├── convergence      # Convergence info (iterations, tolerance)
-├── positional_weights # Bias correction weights (if used)
-├── uncertainty      # Standard errors (if computed)
-├── metadata         # Parameters and input info
-└── class: "mpaqt_quant_result"
+list(
+  weights = numeric(),
+  quantiles = numeric(),
+  bias_type = "3p",
+  n_bins = 50L,
+  converged = FALSE,
+  iterations = 100L,
+  initial_beta = numeric()
+)
 ```
 
----
+The object contains positional-bias results only. Long-read observations and
+prior models are supplied to `mpaqt_postquant()`, not `mpaqt_prequant()`.
 
-## Dependency Management Pattern
+### `mpaqt_quant_result`
 
-MPAQT uses a tiered dependency approach:
-
-### Required Dependencies (Imports)
-
-Always available, loaded with the package:
+The base result contains:
 
 ```r
-import(data.table)
-import(Matrix)
-import(cli)
+list(
+  abundances = numeric(),
+  tpm = numeric(),
+  log_likelihood = numeric(),
+  converged = logical(),
+  iterations = integer(),
+  fitted_values = numeric(),
+  prior_variance = numeric(),
+  positional_weights = NULL,
+  positional_bias_type = NULL,
+  lr_coverage_probs = NULL,
+  lr_model = NULL,
+  prior_predictions = NULL,
+  diagnostics = list()
+)
 ```
 
-### Optional Dependencies (Suggests)
+`mpaqt_postquant()` adds `normalization`, `normalized_counts`, `uncertainty`,
+`parameters`, `sr_input`, and `lr_input`. Attributes describe the number of
+transcripts and whether long reads, bias correction, a prior, and uncertainty
+are present.
 
-Loaded on-demand using `require_bioc()`:
+Use public accessors such as `tpm()`, `abundances()`, `uncertainty()`,
+`has_uncertainty()`, `get_parameters()`, and `get_input_metadata()` instead of
+depending on internal construction details.
 
-```r
-# In R/validate.R
-require_bioc <- function(pkg, reason = "for this operation") {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
-    cli::cli_abort(c(
-      "Package {.pkg {pkg}} is required {reason}.",
-      "i" = "Install it with: {.code BiocManager::install(\"{pkg}\")}"
-    ))
-  }
-}
+## Dependencies
 
-# Usage in other files
-require_bioc("Biostrings", "to extract transcriptome sequences")
+Required R packages are declared under `Imports` in `DESCRIPTION`. Optional
+Bioconductor packages are checked only by workflows that need them. For
+example, index creation requires Biostrings and rtracklayer, genome-based
+transcript extraction additionally needs BSgenome-related packages, and raw
+FLNC processing needs bambu and its supporting packages.
+
+The short-read FASTQ pathway requires kallisto and bustools. Raw long-read
+alignment additionally requires minimap2 and samtools. Callers that already
+have count RDS files do not need the corresponding external processing tools.
+
+## Error Handling
+
+User-facing functions validate object classes, paths, technology names, and
+input-path combinations before starting expensive work. Errors and warnings
+are produced through the R `cli` package. New pathways should reuse validation
+and external-tool wrappers rather than invoking system commands directly.
+
+## Testing
+
+The current tests are:
+
+```text
+tests/testthat/
+├── helper.R
+├── test-algo-bias.R
+├── test-algo-newton.R
+├── test-class-counts.R
+├── test-class-index.R
+├── test-class-result.R
+├── test-integration-index.R
+├── test-integration-quant.R
+├── test-integration-sample-prep.R
+└── test-validate.R
 ```
 
-### External Tool Checking
-
-Tools are checked only when needed:
-
-```r
-# In R/validate.R
-check_tool_exists <- function(tool, min_version = NULL) {
-  path <- Sys.which(tool)
-  if (path == "") {
-    cli::cli_abort(c(
-      "{.strong {tool}} is not installed or not in PATH.",
-      "i" = "Install with: {.code conda install -c bioconda {tool}}"
-    ))
-  }
-  invisible(path)
-}
-```
-
----
-
-## Pathway Detection Pattern
-
-MPAQT supports multiple input pathways. Detection is centralized in `validate.R`:
-
-```r
-detect_sr_pathway <- function(fastq_1, fastq_2, bus_file, ec_file, rds_file) {
-  if (!is.null(rds_file)) return("rds")
-  if (!is.null(bus_file) && !is.null(ec_file)) return("bus")
-  if (!is.null(fastq_1) && !is.null(fastq_2)) return("fastq")
-  cli::cli_abort("Could not determine input pathway")
-}
-```
-
-Each processing function then dispatches based on the pathway:
-
-```r
-mpaqt_prepare_short_reads <- function(...) {
-  pathway <- detect_sr_pathway(...)
-
-  switch(pathway,
-    "fastq" = sr_pathway_fastq(...),
-    "bus"   = sr_pathway_bus(...),
-    "rds"   = sr_pathway_rds(...)
-  )
-}
-```
-
----
-
-## Error Handling Pattern
-
-MPAQT uses `cli` for informative error messages:
-
-```r
-# Good error message pattern
-cli::cli_abort(c(
-  "Failed to create index.",
-  "x" = "GTF file not found: {.file {annotation}}",
-  "i" = "Ensure the file exists and is readable."
-))
-
-# Validation pattern
-validate_file_exists <- function(path, arg_name = "file") {
-  if (!file.exists(path)) {
-    cli::cli_abort(c(
-      "{.arg {arg_name}} does not exist.",
-      "x" = "File not found: {.file {path}}"
-    ))
-  }
-  invisible(path)
-}
-```
-
----
-
-## Adding New Features
-
-### Adding a New Processing Pathway
-
-1. Add detection logic in `validate.R`:
-   ```r
-   detect_new_pathway <- function(...) { ... }
-   ```
-
-2. Create pathway-specific function:
-   ```r
-   new_pathway_handler <- function(...) { ... }
-   ```
-
-3. Add switch case in main function
-
-4. Document new parameters with roxygen2
-
-### Adding a New S3 Method
-
-1. Create generic in appropriate class file:
-   ```r
-   #' @export
-   my_generic <- function(x, ...) UseMethod("my_generic")
-   ```
-
-2. Create method:
-   ```r
-   #' @export
-   my_generic.mpaqt_quant_result <- function(x, ...) { ... }
-   ```
-
-3. Add to NAMESPACE via roxygen2 `@export` tag
-
----
-
-## Testing Strategy
-
-Tests are organized in `tests/testthat/`:
-
-```
-tests/
-├── testthat.R
-└── testthat/
-    ├── test-index.R       # Index creation tests
-    ├── test-counts.R      # Count object tests
-    ├── test-quant.R       # Quantification tests
-    └── fixtures/          # Test data
-```
-
-Run tests with:
+Run the package tests from the repository root:
 
 ```r
 devtools::test()
 ```
 
----
-
-## Documentation Standards
-
-### Function Documentation
-
-All exported functions should have:
+Run the full package check before release:
 
 ```r
-#' Function Title
-#'
-#' @description
-#' Brief description of what the function does.
-#'
-#' @param x Description of parameter x
-#' @param ... Additional arguments
-#'
-#' @return Description of return value
-#'
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' result <- my_function(x)
-#' }
-my_function <- function(x, ...) {
-  # Implementation
-}
+devtools::check()
 ```
 
-### Internal Functions
+`tests/testthat/helper.R` defines reusable tool, fixture, temporary-directory,
+and mock-object helpers. Current integration tests skip directly when BUS
+parsing data or BSgenome is unavailable.
 
-Internal functions use `@keywords internal`:
+## Documentation Workflow
+
+Roxygen comments immediately above exported functions are the source for
+`man/*.Rd` and `NAMESPACE`. Do not edit generated files by hand.
 
 ```r
-#' Internal Helper Function
-#'
-#' @keywords internal
-#' @noRd
-internal_helper <- function(...) {
-  # Implementation
-}
+# Regenerate man/ and NAMESPACE
+devtools::document()
+
+# Build the local pkgdown output in docs/
+pkgdown::build_site(preview = FALSE)
 ```
 
----
+The source articles are the `.Rmd` files under `vignettes/`. When an API
+signature changes, update the corresponding workflow example and add or update
+tests in the same change.
 
-## Contributing Guidelines
+## Contribution Checklist
 
-### Code Style
+1. Keep changes focused within the relevant `api-*`, `process-*`, `algo-*`,
+   `infra-*`, or `class-*` responsibility.
+2. Use four-space indentation and `snake_case` names.
+3. Add regression tests for changed behavior.
+4. Run `devtools::test()` and `devtools::check()`.
+5. Regenerate roxygen and pkgdown output when public documentation changes.
 
-- Use `snake_case` for functions and variables
-- Use `mpaqt_` prefix for exported functions
-- Maximum line length: 80 characters
-- Use `cli::cli_abort()` for errors
-- Use `cli::cli_warn()` for warnings
-
-### Pull Request Process
-
-1. Fork the repository
-2. Create a feature branch
-3. Make changes with tests
-4. Run `devtools::check()`
-5. Submit pull request
-
-### Reporting Issues
-
-Report issues at: https://github.com/csglab/mpaqt2/issues
-
-Include:
-- MPAQT version: `packageVersion("mpaqt")`
-- R version: `R.version.string`
-- Operating system
-- Minimal reproducible example
+Repository members can report issues at
+<https://github.com/csglab/mpaqt2/issues>. Users without repository access
+should contact the package maintainer listed in `DESCRIPTION`.

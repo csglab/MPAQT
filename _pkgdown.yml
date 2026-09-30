@@ -25,8 +25,6 @@ navbar:
           href: articles/single-cell-workflow.html
         - text: "---"
         - text: Reference
-        - text: CLI Reference
-          href: articles/cli-reference.html
         - text: Quantification Methods
           href: articles/quantification-methods.html
         - text: Package Structure
@@ -34,7 +32,7 @@ navbar:
 
 reference:
   - title: Main Functions
-    eisc: Primary user-facing functions
+    desc: Primary user-facing functions
     contents:
       - mpaqt_index
       - mpaqt_prepare_short_reads

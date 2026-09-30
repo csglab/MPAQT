@@ -45,10 +45,10 @@ with separate files (legacy behavior).}
 \item{chunk_size}{Number of simulated reads per chunk (default: 10000000)}
 
 \item{store_sequences}{Store transcriptome sequences in index for long-read
-workflows (default: TRUE)}
+workflows (default: FALSE)}
 
 \item{store_gtf}{Store GTF annotation in index for long-read workflows
-(default: TRUE)}
+(default: FALSE)}
 
 \item{temp_dir}{Temporary directory for intermediate files}
 
@@ -113,8 +113,8 @@ By default, creates a single bundled file containing all index components
 including the Kallisto index binary. This makes the index fully portable.
 
 For long-read workflows (FLNC FASTQ processing), set \code{store_sequences = TRUE}
-and \code{store_gtf = TRUE} (the defaults) to include the reference data needed
-for minimap2 alignment and Bambu quantification.
+and \code{store_gtf = TRUE} to include the reference data needed for minimap2
+alignment and Bambu quantification. Both options default to \code{FALSE}.
 }
 
 \examples{

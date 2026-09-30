@@ -1,537 +1,337 @@
 ---
-title: "Algorithm and Mathematical Methods"
-author: "MPAQT Development Team"
-date: "`r Sys.Date()`"
-output:
-  rmarkdown::html_vignette:
-    toc: true
-    toc_depth: 3
-    fig_width: 7
-    fig_height: 5
+title: "MPAQT Quantification: Implemented Methods"
+output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Algorithm and Mathematical Methods}
+  %\VignetteIndexEntry{MPAQT Quantification: Implemented Methods}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+```{r, include = FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE,
   collapse = TRUE,
   comment = "#>",
   fig.align = "center"
 )
 ```
 
-## Overview
+## Scope
 
-MPAQT (Multi-Platform Accurate Quantification of Transcripts) integrates short-read and long-read RNA-seq data to improve transcript abundance estimation. This vignette provides a comprehensive mathematical description of the quantification algorithm.
+MPAQT integrates short-read equivalence-class counts with optional long-read
+transcript counts, positional-bias weights, UMI normalization, and
+transcript-level priors. This article describes the algorithm implemented in
+package version 2.4.0.
 
-### The Core Optimization Problem
+The internal function is named `run_em_algorithm()`, but the implementation is
+not a classical EM routine that materializes an E-step assignment matrix.
+Within each iteration it performs sequential transcript-wise coordinate Newton
+updates and immediately updates the expected equivalence-class counts.
 
-MPAQT estimates transcript abundances $\boldsymbol{\beta} = (\beta_1, \ldots, \beta_T)$ by maximizing a composite objective function:
+## Notation and Short-Read Model
 
-$$\max_{\boldsymbol{\beta}} L(\boldsymbol{\beta}) = L_{SR}(\boldsymbol{\beta}) + L_{LR}(\boldsymbol{\beta}) - R(\boldsymbol{\beta})$$
+Let:
 
-where:
+- $n_i$ be the observed count for short-read equivalence class (EC) $i$;
+- $\beta_j \ge 0$ be the raw abundance for transcript $j$;
+- $P_{ij}$ be the stored EC-by-transcript design/exposure value; and
+- $y_i = \sum_j P_{ij}\beta_j$ be the expected EC count.
 
-- $L_{SR}(\boldsymbol{\beta})$: Short-read log-likelihood (equivalence class model)
-- $L_{LR}(\boldsymbol{\beta})$: Long-read log-likelihood (direct transcript counts)
-- $R(\boldsymbol{\beta})$: Regularization penalty (log-normal prior)
+For a default bulk index, the nonzero `x` values in `index$p_matrices[[j]]`
+are counts produced by simulated reads, not columns that are automatically
+normalized to sum to one. Each per-transcript table stores the EC indices `i`,
+the values `x`, and the associated 5' and 3' distances.
 
+Ignoring constants, the short-read Poisson negative log-likelihood is
 
-## Short-Read Likelihood ($L_{SR}$)
+$$
+\operatorname{NLL}_{SR}(\boldsymbol\beta)
+= \sum_i \left[y_i - n_i\log(y_i)\right].
+$$
 
-### Equivalence Classes
+### Optional UMI normalization
 
-Short reads often map ambiguously to multiple transcripts due to shared sequences. Rather than discarding multi-mapping reads, MPAQT uses **equivalence classes** (ECs) - groups of reads that map to the same set of transcripts.
+`do_umi_correction = TRUE` normalizes each transcript's P column to sum to one.
+Without positional weights, or with `umi_correction_timing = "pre"`, this is
+done before the coordinate iterations. With positional weights and
+`umi_correction_timing = "post"`, MPAQT multiplies by the positional weights
+first and normalizes the resulting weighted column during each iteration.
 
-For each equivalence class $i$, we observe $n_i$ reads and have a probability matrix $\mathbf{P}$ where $P_{ij}$ is the probability that a read from transcript $j$ falls into EC $i$.
+This P-matrix normalization is distinct from UMI molecule deduplication in
+`mpaqt_prepare_short_reads_sc()`. Read preparation defaults to
+`do_umi_dedup = FALSE`; users who want molecule-level EC counts must enable
+deduplication explicitly.
 
-### The Multinomial Model
+## Sequential Coordinate Updates
 
-The expected read count for EC $i$ is:
+MPAQT initializes all $\beta_j$ and $y_i$ to zero. It then visits transcripts
+in index order during every iteration.
 
-$$y_i = \sum_{j=1}^{T} \beta_j \cdot P_{ij}$$
+### First iteration
 
-where $T$ is the total number of transcripts.
+Because the Poisson expressions are unstable at an all-zero initialization,
+the first iteration uses a Gaussian residual approximation. For the current
+transcript column $p_j$,
 
-Under a Poisson approximation to the multinomial, the log-likelihood is:
+$$
+\Delta_j =
+\frac{\sum_i (n_i-y_i)P_{ij}}
+     {\sum_i P_{ij}^2}.
+$$
 
-$$L_{SR}(\boldsymbol{\beta}) = \sum_{i=1}^{E} \left[ n_i \log(y_i) - y_i \right]$$
+### Later iterations
 
-where $E$ is the number of equivalence classes.
+For subsequent iterations, with a small numerical constant $\epsilon$, the
+implemented short-read gradient and positive curvature terms are
 
-### Computing the P Matrix
+$$
+g_j = \sum_i P_{ij}
+\left(1-\frac{n_i+\epsilon}{y_i+\epsilon}\right)
+$$
 
-The probability $P_{ij}$ that a fragment from transcript $j$ is assigned to EC $i$ depends on:
+and
 
-1. **Transcript length**: Longer transcripts generate more reads
-2. **EC membership**: Which transcripts share the EC
-3. **Effective length**: Adjusted for fragment size
+$$
+h_j = \sum_i (n_i+\epsilon)
+\left(\frac{P_{ij}}{y_i+\epsilon}\right)^2.
+$$
 
-```{r p-matrix-concept, echo=FALSE, eval=FALSE}
-# Conceptual example of P matrix construction
-# Rows = equivalence classes
-# Columns = transcripts
-# Values = probability of read from transcript mapping to EC
+The unregularized coordinate step is $\Delta_j=-g_j/h_j$. Non-finite steps
+are replaced with zero, and the lower bound
+$\Delta_j \ge -\beta_j+10^{-10}$ preserves positive abundances. After each
+step, the implementation immediately applies
 
-# Example with 3 transcripts (A, B, C) and 4 ECs
-P_example <- matrix(
-  c(
-    1.0,   0,   0,    # EC1: unique to A
-    0,   1.0,   0,    # EC2: unique to B
-    0.5, 0.5,   0,    # EC3: shared A,B
-    0.3, 0.3, 0.4     # EC4: shared A,B,C
-  ),
-  nrow = 4, byrow = TRUE,
-  dimnames = list(
-    paste0("EC", 1:4),
-    c("Transcript_A", "Transcript_B", "Transcript_C")
-  )
+$$
+\beta_j \leftarrow \beta_j+\Delta_j, \qquad
+y_i \leftarrow y_i+P_{ij}\Delta_j.
+$$
+
+Consequently, later transcripts in an iteration see the updates already made
+to earlier transcripts. MPAQT does not construct or store latent assignment
+probabilities $\gamma_{ij}$.
+
+## Log-Scale Regularization
+
+Starting after the first iteration, positive transcript abundances receive a
+quadratic penalty in log space:
+
+$$
+R_j = \frac{(\log\beta_j-\mu_j)^2}{2\sigma^2}.
+$$
+
+The penalty contributions added to the coordinate gradient and curvature are
+
+$$
+g_{R,j}=\frac{\log\beta_j-\mu_j}{\beta_j\sigma^2}
+$$
+
+and
+
+$$
+h_{R,j}=\frac{-\log\beta_j+\mu_j+1}{\beta_j^2\sigma^2}.
+$$
+
+The regularized Newton step is bounded relative to the unregularized step and
+the step toward the prior mode, $\exp(\mu_j)-\beta_j$. When it lies outside
+that interval, MPAQT minimizes the one-dimensional penalized Poisson objective
+with `stats::optimize()` over the bounded interval.
+
+Without a user prior, $\mu$ and $\sigma^2$ are updated from the mean and mean
+squared deviation of positive log abundances after each iteration. The
+variance is bounded below by $10^{-6}$ in post-quantification.
+
+## Long-Read Integration
+
+When long-read counts are present, MPAQT fits a Poisson GLM after every
+coordinate sweep:
+
+$$
+c_j \sim \operatorname{Poisson}(\beta_j q_j), \qquad
+q_j=\exp(C_j\boldsymbol\theta).
+$$
+
+Here $c_j$ is the long-read transcript count and $C_j$ is the row of index
+covariates. The current index covariates are an intercept, log GC ratio, log
+transcript length, and a protein-coding indicator. Sequencing-depth scaling is
+absorbed by the fitted intercept. Although the result field is named
+`lr_coverage_probs`, $q_j$ is a positive rate/exposure multiplier and is not
+constrained to the interval $[0,1]$.
+
+During an abundance coordinate update, a long-read observation is appended
+only when $c_j>0$. A transcript with zero long-read counts therefore does not
+receive a direct zero-count long-read coordinate term. Zero counts still
+participate in the GLM fit and in the diagnostic likelihood described below.
+
+## Prior Specifications
+
+`prior_model` accepts the following forms:
+
+| Value | Implemented prior mean behavior |
+|-------|---------------------------------|
+| `NULL` | Uses the global mean of positive log abundances |
+| `"shrinkage"` | Uses transcript prior predictions initialized to zero from `prior_start` |
+| `"long_read"` | Uses `log(long_read_count + 1)` as transcript prior predictions |
+| data frame/data table | Requires `transcript_id`; remaining columns are GPBoost covariates |
+| list with `mean` | Uses a full-length or transcript-named custom mean vector |
+
+For a data-frame prior, transcript versions are trimmed when matching the
+covariate table to the index. Beginning at `prior_start`, GPBoost is fitted
+after calculation of the diagnostic likelihood and after the convergence
+check. Its predictions and variance therefore affect the next iteration.
+
+To ensure a data-frame prior is used, choose `convergence_start` later than
+`prior_start`. The single-cell GTEx example uses:
+
+```{r prior-schedule, eval=FALSE}
+results <- mpaqt_quant_sc(
+  index = index,
+  sr_counts_list = sr_list,
+  prior_model = prior_data,
+  prior_start = 25L,
+  convergence_start = 50L
 )
 ```
 
+## Positional-Bias Prequantification
 
-## Long-Read Likelihood ($L_{LR}$)
+Positional-bias correction is optional. When `positional_bias` is `"3p"` or
+`"5p"`, `mpaqt_quant()` first calls `mpaqt_prequant()`.
 
-### Direct Transcript-Level Counts
+The selected transcript-EC distances $d_{ij}$ are divided into global quantile
+bins. All bin weights start at one. After the default 20-iteration warm-up,
+MPAQT builds an EC-by-bin expected-count matrix $S$ and minimizes
 
-Unlike short reads, long reads typically span full transcripts and can be unambiguously assigned. Let $c_j$ be the observed long-read count for transcript $j$.
+$$
+\operatorname{NLL}_{bias}(\mathbf w)
+=\sum_i\left[\lambda_i-n_i\log(\lambda_i)\right],
+\qquad
+\boldsymbol\lambda=S\exp(\log\mathbf w),
+$$
 
-### Coverage Probability Model
+using L-BFGS-B. At each update, log weights are bounded to the current log
+weights plus or minus one. For identifiability, fitted weights are divided by
+the first-bin weight and abundances are multiplied by that same value.
 
-Long-read coverage varies across transcripts due to:
+The `"3p"` and `"5p"` settings select the distance origin; they do not impose a
+monotonic enrichment direction. `mpaqt_prequant()` returns positional weights,
+quantile boundaries, bias metadata, convergence information, and initial
+abundances. It does not accept long-read counts or fit a transcript prior.
 
-1. **3'/5' positional bias**: Degradation or priming effects
-2. **Sequence-dependent effects**: GC content, secondary structure
-3. **Technical variation**: Library prep, sequencing
+## Diagnostic Likelihood and Convergence
 
-We model the expected long-read count as:
+The scalar stored as `log_likelihood` is a convergence diagnostic. It is not
+the complete penalized objective used by the coordinate steps.
 
-$$\mathbb{E}[c_j] = \beta_j \cdot p_j \cdot d$$
+The diagnostic begins with
 
-where:
+$$
+D_{SR}=\sum_i[n_i\log(y_i+\epsilon)-y_i]
+$$
 
-- $p_j$: Coverage probability for transcript $j$ (from GLM)
-- $d$: Sequencing depth scale factor
+and adds $-T\log(\sigma^2)/2$. It does not include the transcript-specific
+quadratic terms $(\log\beta_j-\mu_j)^2/(2\sigma^2)$.
 
-### The Poisson Likelihood
+When long reads are present, the implementation also adds
 
-The long-read log-likelihood is:
+$$
+\sum_j[c_j\log(\beta_jq_j+\epsilon)-\beta_jq_j]
+$$
 
-$$L_{LR}(\boldsymbol{\beta}) = \sum_{j=1}^{T} \left[ c_j \log(\beta_j \cdot p_j) - \beta_j \cdot p_j \right]$$
+and the fitted GLM's `logLik()` value. These contributions should therefore be
+interpreted as the current diagnostic calculation, not as a single separately
+defined likelihood optimized exactly by every coordinate update.
 
-For transcripts without long-read coverage ($c_j = 0$), this term contributes:
+After `convergence_start`, the algorithm declares convergence only when the
+diagnostic change is positive and smaller than `tolerance`:
 
-$$-\beta_j \cdot p_j$$
+$$
+0 < D^{(t)}-D^{(t-1)} < \texttt{tolerance}.
+$$
 
-which acts as a soft penalty discouraging high abundance estimates for uncovered transcripts.
+There is no separate relative-abundance convergence criterion.
 
+## Two-Phase API
 
-## Regularization ($R$)
+The main `mpaqt_quant()` wrapper runs prequantification only when positional
+bias is requested. The same work can be run explicitly:
 
-### The Log-Normal Prior
-
-To prevent overfitting and stabilize estimates for lowly-expressed transcripts, MPAQT uses L2 regularization in log-space:
-
-$$R(\boldsymbol{\beta}) = \frac{\lambda}{2} \sum_{j=1}^{T} \left( \log(\beta_j) - \mu_j \right)^2$$
-
-This is equivalent to a log-normal prior:
-
-$$\log(\beta_j) \sim \mathcal{N}(\mu_j, \sigma^2)$$
-
-where $\sigma^2 = 1/\lambda$.
-
-### Adaptive Prior Mean
-
-The prior mean $\mu_j$ can be set:
-
-1. **Global**: Same value for all transcripts (simple shrinkage)
-2. **Gene-level**: Mean of transcript abundances within gene
-3. **Long-read informed**: Based on long-read observations
-
-```{r prior-example, eval=FALSE}
-# Example: Gene-level prior
-compute_gene_level_prior <- function(abundances, transcript_to_gene) {
-  gene_means <- tapply(log(abundances + 1e-10), transcript_to_gene, mean)
-  prior_means <- gene_means[transcript_to_gene]
-  return(prior_means)
-}
-```
-
-
-## The EM Algorithm
-
-### Overview
-
-MPAQT uses an Expectation-Maximization (EM) algorithm to maximize the objective function. The algorithm iterates between:
-
-1. **E-step**: Compute expected read assignments
-2. **M-step**: Update abundance estimates
-
-### E-Step: Read Assignment
-
-Given current abundances $\boldsymbol{\beta}^{(t)}$, compute the probability that each read in EC $i$ came from transcript $j$:
-
-$$\gamma_{ij}^{(t)} = \frac{\beta_j^{(t)} \cdot P_{ij}}{\sum_{k=1}^{T} \beta_k^{(t)} \cdot P_{ik}}$$
-
-### M-Step: Abundance Update
-
-Update abundances using the Newton-Raphson method. For each transcript $j$:
-
-#### Gradient (First Derivative)
-
-$$\frac{\partial L}{\partial \beta_j} = \underbrace{\sum_{i=1}^{E} \frac{n_i \cdot P_{ij}}{y_i} - \sum_{i=1}^{E} P_{ij}}_{\text{Short-read}} + \underbrace{\frac{c_j}{\beta_j} - p_j}_{\text{Long-read}} - \underbrace{\frac{\lambda (\log\beta_j - \mu_j)}{\beta_j}}_{\text{Prior}}$$
-
-#### Hessian (Second Derivative)
-
-$$\frac{\partial^2 L}{\partial \beta_j^2} = -\sum_{i=1}^{E} \frac{n_i \cdot P_{ij}^2}{y_i^2} - \frac{c_j}{\beta_j^2} - \frac{\lambda(1 - \log\beta_j + \mu_j)}{\beta_j^2}$$
-
-#### Newton-Raphson Update
-
-$$\beta_j^{(t+1)} = \beta_j^{(t)} - \frac{\partial L / \partial \beta_j}{\partial^2 L / \partial \beta_j^2}$$
-
-With bounds to ensure $\beta_j > 0$:
-
-```{r newton-update, eval=FALSE}
-# Newton-Raphson update with bounds
-newton_update <- function(beta, gradient, hessian, min_beta = 1e-10) {
-  # Ensure hessian is negative (concave region)
-  if (hessian >= 0) {
-    # Use gradient descent fallback
-    step <- 0.1 * gradient
-  } else {
-    step <- -gradient / hessian
-  }
-
-  # Apply update with bounds
-  new_beta <- beta + step
-  new_beta <- max(new_beta, min_beta)
-
-  return(new_beta)
-}
-```
-
-### Convergence Criteria
-
-The algorithm terminates when:
-
-1. **Relative change**: $\frac{\|\boldsymbol{\beta}^{(t+1)} - \boldsymbol{\beta}^{(t)}\|}{\|\boldsymbol{\beta}^{(t)}\|} < \epsilon$
-2. **Likelihood change**: $|L^{(t+1)} - L^{(t)}| < \epsilon$
-3. **Maximum iterations**: Reached `max_iter`
-
-```{r convergence, eval=FALSE}
-# Check convergence
-check_convergence <- function(beta_old, beta_new, tolerance = 1e-4) {
-  relative_change <- sqrt(sum((beta_new - beta_old)^2)) / sqrt(sum(beta_old^2))
-  return(relative_change < tolerance)
-}
-```
-
-
-## Positional Bias Correction
-
-### The Bias Model
-
-RNA degradation and sequencing artifacts cause non-uniform read coverage along transcripts. MPAQT models this with distance-dependent weights.
-
-### 3' Bias Model
-
-For 3' bias (common in poly-A selected data), reads near the 3' end are over-represented:
-
-$$w_j(d) = \exp\left( \sum_{b=1}^{B} \theta_b \cdot \mathbb{1}[d \in \text{bin}_b] \right)$$
-
-where:
-
-- $d$: Distance from 3' end
-- $B$: Number of distance bins
-- $\theta_b$: Weight for bin $b$
-
-### 5' Bias Model
-
-For 5' bias (common in degraded samples), reads near the 5' end are depleted:
-
-$$w_j(d) = \exp\left( \sum_{b=1}^{B} \phi_b \cdot \mathbb{1}[d \in \text{bin}_b] \right)$$
-
-### Bias Weight Optimization
-
-The bias weights $\boldsymbol{\theta}$ (or $\boldsymbol{\phi}$) are optimized using L-BFGS-B:
-
-$$\min_{\boldsymbol{\theta}} \sum_{i=1}^{E} \left( n_i - \sum_{j=1}^{T} \beta_j \cdot w_j(d_i) \cdot P_{ij} \right)^2$$
-
-```{r bias-optimization, eval=FALSE}
-# Optimize bias weights
-optimize_bias_weights <- function(counts, P_matrix, abundances,
-                                   distances, n_bins = 50) {
-  # Create distance bins
-  bins <- cut(distances, breaks = n_bins, labels = FALSE)
-
-  # Objective function
-  objective <- function(weights) {
-    # Apply weights to P matrix
-    weighted_P <- P_matrix * exp(weights[bins])
-
-    # Compute expected counts
-    expected <- weighted_P %*% abundances
-
-    # Residual sum of squares
-    return(sum((counts - expected)^2))
-  }
-
-  # Optimize
-  result <- optim(
-    par = rep(0, n_bins),
-    fn = objective,
-    method = "L-BFGS-B",
-    lower = -5,
-    upper = 5
-  )
-
-  return(result$par)
-}
-```
-
-
-## Prior Integration with Mixed-Effects Models
-
-### The Hierarchical Model
-
-MPAQT can incorporate gene-level information through a mixed-effects model:
-
-$$\log(\beta_{jg}) = \mathbf{X}_{jg}^T \boldsymbol{\theta} + b_g + \epsilon_{jg}$$
-
-where:
-
-- $\beta_{jg}$: Abundance of transcript $j$ in gene $g$
-- $\mathbf{X}_{jg}$: Fixed-effect covariates (GC content, length, etc.)
-- $\boldsymbol{\theta}$: Fixed-effect coefficients
-- $b_g \sim \mathcal{N}(0, \sigma_g^2)$: Gene-level random effect
-- $\epsilon_{jg} \sim \mathcal{N}(0, \sigma^2)$: Residual error
-
-### Implementation with GPBoost/lme4
-
-```{r mixed-effects, eval=FALSE}
-# Fit mixed-effects model for prior
-fit_prior_model <- function(abundances, covariates, gene_ids) {
-  # Prepare data
-  df <- data.frame(
-    log_abundance = log(abundances + 1e-10),
-    gc_content = covariates$gc,
-    length = log(covariates$length),
-    gene = gene_ids
-  )
-
-  # Fit with lme4
-  model <- lme4::lmer(
-    log_abundance ~ gc_content + length + (1 | gene),
-    data = df
-  )
-
-  # Extract prior parameters
-  prior_mean <- predict(model)
-  prior_var <- sigma(model)^2
-
-  return(list(mean = prior_mean, variance = prior_var))
-}
-```
-
-
-## Two-Phase Quantification
-
-### Pre-Quantification Phase
-
-The pre-quantification phase provides initial abundance estimates and optimizes bias weights:
-
-```{r prequant, eval=FALSE}
-# Pre-quantification workflow
-prequant_result <- mpaqt_prequant(
-  index = idx,
+```{r two-phase, eval=FALSE}
+prequant <- mpaqt_prequant(
+  index = index,
   sr_counts = sr_counts,
-  lr_counts = lr_counts,
   positional_bias = "3p",
-  n_bins = 50,
-  max_iter = 50,        # Fewer iterations
-  fit_prior = TRUE,     # Fit prior model
-  verbose = TRUE
+  n_bins = 50L
 )
-```
 
-**Key outputs**:
+mpaqt_save_prequant(prequant, "results/mpaqt.prequant.rds")
 
-- Initial abundance estimates
-- Optimized bias weights
-- Prior model parameters
-- Convergence diagnostics
-
-### Post-Quantification Phase
-
-The post-quantification phase refines estimates using the pre-computed parameters:
-
-```{r postquant, eval=FALSE}
-# Post-quantification workflow
 result <- mpaqt_postquant(
-  index = idx,
+  index = index,
   sr_counts = sr_counts,
   lr_counts = lr_counts,
-  prequant = prequant_result,
-  max_iter = 100,
-  tolerance = 1e-6,     # Tighter convergence
-  compute_uncertainty = TRUE,
-  verbose = TRUE
+  prequant = prequant,
+  prior_model = prior_data,
+  prior_start = 25L,
+  convergence_start = 50L,
+  compute_uncertainty = TRUE
 )
 ```
 
-**Key outputs**:
+Long-read observations and priors belong to `mpaqt_postquant()`; they are not
+inputs or outputs of `mpaqt_prequant()`.
 
-- Final abundance estimates (TPM)
-- Uncertainty estimates (if requested)
-- Convergence information
-- Log-likelihood values
+## Uncertainty
 
+With `compute_uncertainty = TRUE`, MPAQT returns a diagonal, short-read-only
+approximation. For each positive transcript abundance,
 
-## Uncertainty Estimation
+$$
+I_j=\sum_i\frac{P_{ij}^2n_i}{\max(y_i,10^{-10})^2},
+\qquad
+SE_j=I_j^{-1/2}.
+$$
 
-### Fisher Information
+This calculation does not include off-diagonal transcript covariance,
+long-read information, prior curvature, or explicit positional-weight terms.
+It returns standard errors only; the package does not currently return
+confidence intervals.
 
-Uncertainty in abundance estimates is computed using the observed Fisher information:
+## Returned Abundances and TPM
 
-$$I(\beta_j) = -\frac{\partial^2 L}{\partial \beta_j^2}$$
+An `mpaqt_quant_result` stores raw coordinate estimates in `abundances` and a
+separately scaled vector in `tpm`:
 
-The standard error is:
+$$
+\operatorname{TPM}_j=10^6\frac{\beta_j}{\sum_k\beta_k}.
+$$
 
-$$SE(\beta_j) = \frac{1}{\sqrt{I(\beta_j)}}$$
+Use `abundances(result)` and `tpm(result)` to keep these values distinct. The
+`tpm` field is calculated for every `normalize` setting. `normalize = "depth"`
+also stores the million-scaled values in `normalized_counts`; `"tpm"` and
+`"none"` retain raw abundances in that field.
 
-### Confidence Intervals
+## Defaults by Entry Point
 
-Approximate 95% confidence intervals:
+| Parameter | `mpaqt_quant()` | `mpaqt_prequant()` | `mpaqt_postquant()` | `mpaqt_quant_sc()` |
+|-----------|-----------------|--------------------|---------------------|--------------------|
+| `max_iter` | 100 | 100 | 100 | 100 |
+| `tolerance` | `1e-4` | `1e-1` | `1e-4` | `1e-4` |
+| `n_bins` | 50 | 50 | from prequant | 50 |
+| `weight_update_start` | internal prequant default | 20 | not applicable | internal prequant default |
+| `prior_start` | 25 | not applicable | 50 | 50 |
+| `convergence_start` | 25 | 25 | 25 | 25 |
+| `do_umi_correction` | `FALSE` | not applicable | `FALSE` | `TRUE` |
+| `umi_correction_timing` | `"post"` | not applicable | `"post"` | `"post"` |
+| `compute_uncertainty` | `FALSE` | not applicable | `FALSE` | not exposed (`FALSE`) |
 
-$$\left[ \beta_j \cdot e^{-1.96 \cdot SE(\log\beta_j)}, \quad \beta_j \cdot e^{1.96 \cdot SE(\log\beta_j)} \right]$$
-
-```{r uncertainty, eval=FALSE}
-# Compute uncertainty from Fisher information
-compute_uncertainty <- function(abundances, hessian_diag) {
-  # Fisher information (negative Hessian)
-  fisher_info <- -hessian_diag
-
-  # Standard errors
-  se <- 1 / sqrt(pmax(fisher_info, 1e-10))
-
-  # Confidence intervals (log scale)
-  ci_lower <- abundances * exp(-1.96 * se / abundances)
-  ci_upper <- abundances * exp(1.96 * se / abundances)
-
-  return(list(se = se, ci_lower = ci_lower, ci_upper = ci_upper))
-}
-```
-
-
-## Workflow Diagram
-
-The complete MPAQT workflow:
-
-```
-                    +-------------------+
-                    |   Reference Files |
-                    | (FASTA + GTF)     |
-                    +--------+----------+
-                             |
-                             v
-                    +-------------------+
-                    |   mpaqt_index()   |
-                    | - Build kallisto  |
-                    | - Compute P matrix|
-                    +--------+----------+
-                             |
-            +----------------+----------------+
-            |                                 |
-            v                                 v
-+---------------------+            +---------------------+
-| Short-Read FASTQ    |            | Long-Read FASTQ     |
-+----------+----------+            +----------+----------+
-           |                                  |
-           v                                  v
-+---------------------+            +---------------------+
-| mpaqt_prepare_      |            | mpaqt_prepare_      |
-| short_reads()       |            | long_reads()        |
-| - kallisto bus      |            | - minimap2          |
-| - Extract EC counts |            | - Bambu             |
-+----------+----------+            +----------+----------+
-           |                                  |
-           v                                  v
-+---------------------+            +---------------------+
-| mpaqt_counts_sr     |            | mpaqt_counts_lr     |
-| (EC count vector)   |            | (Transcript counts) |
-+----------+----------+            +----------+----------+
-           |                                  |
-           +----------------+----------------+
-                            |
-                            v
-               +-------------------------+
-               |   mpaqt_prequant()      |
-               | - Initial EM            |
-               | - Bias optimization     |
-               | - Prior model fitting   |
-               +------------+------------+
-                            |
-                            v
-               +-------------------------+
-               |   mpaqt_postquant()     |
-               | - Final EM              |
-               | - Uncertainty estimation|
-               +------------+------------+
-                            |
-                            v
-               +-------------------------+
-               |   mpaqt_quant_result    |
-               | - abundances (TPM)      |
-               | - uncertainty (SE)      |
-               | - convergence info      |
-               +-------------------------+
-```
-
-
-## Algorithm Summary
-
-### Key Equations Reference
-
-| Component | Equation |
-|-----------|----------|
-| **Objective** | $L(\boldsymbol{\beta}) = L_{SR} + L_{LR} - R$ |
-| **SR Likelihood** | $L_{SR} = \sum_i [n_i \log(y_i) - y_i]$ |
-| **Expected EC Count** | $y_i = \sum_j \beta_j P_{ij}$ |
-| **LR Likelihood** | $L_{LR} = \sum_j [c_j \log(\beta_j p_j) - \beta_j p_j]$ |
-| **Prior** | $R = \frac{\lambda}{2} \sum_j (\log\beta_j - \mu_j)^2$ |
-| **E-step** | $\gamma_{ij} = \frac{\beta_j P_{ij}}{\sum_k \beta_k P_{ik}}$ |
-| **Newton Update** | $\beta_j^{new} = \beta_j - \frac{\nabla L}{\nabla^2 L}$ |
-
-### Default Parameters
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `max_iter` | 100 | Maximum EM iterations |
-| `tolerance` | 1e-4 | Convergence threshold |
-| `lambda` | 0.1 | Prior strength |
-| `n_bins` | 50 | Bias correction bins |
-| `prior_start` | 25 | Iteration to enable prior |
-| `convergence_start` | 25 | Iteration to check convergence |
-
+`mpaqt_quant()` passes its public post-quantification defaults to
+`mpaqt_postquant()`, which is why its `prior_start` default differs from a
+direct call to `mpaqt_postquant()`.
 
 ## References
 
-1. **kallisto**: Bray, N.L., et al. (2016). Near-optimal probabilistic RNA-seq quantification. Nature Biotechnology.
-
-2. **EM Algorithm for RNA-seq**: Pachter, L. (2011). Models for transcript quantification from RNA-Seq. arXiv.
-
-3. **bambu**: Chen, Y., et al. (2021). Bambu: context-aware transcript quantification from long read RNA-seq experiments.
-
-4. **Mixed-Effects Models**: Bates, D., et al. (2015). Fitting Linear Mixed-Effects Models Using lme4. Journal of Statistical Software.
-
-5. **Fisher Information**: Efron, B. & Hinkley, D.V. (1978). Assessing the accuracy of the maximum likelihood estimator.
-
-
-## Session Information
-
-```{r session-info, eval=FALSE}
-sessionInfo()
-```
+1. Bray, N. L., et al. (2016). Near-optimal probabilistic RNA-seq
+   quantification. *Nature Biotechnology*.
+2. Chen, Y., et al. (2021). Context-aware transcript quantification from long
+   read RNA-seq data with bambu. *Nature Methods*.
+3. Sigrist, F. (2022). Gaussian process boosting. *Journal of Machine Learning
+   Research*.

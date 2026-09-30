@@ -41,9 +41,9 @@ utils::globalVariables(c(".",
 #' @param threads Number of threads for parallel operations (default: 1)
 #' @param chunk_size Number of simulated reads per chunk (default: 10000000)
 #' @param store_sequences Store transcriptome sequences in index for long-read
-#'   workflows (default: TRUE)
+#'   workflows (default: FALSE)
 #' @param store_gtf Store GTF annotation in index for long-read workflows
-#'   (default: TRUE)
+#'   (default: FALSE)
 #' @param temp_dir Temporary directory for intermediate files
 #' @param keep_temp Keep temporary files after completion (default: FALSE)
 #' @param verbose Print progress messages (default: TRUE)
@@ -82,8 +82,8 @@ utils::globalVariables(c(".",
 #' including the Kallisto index binary. This makes the index fully portable.
 #'
 #' For long-read workflows (FLNC FASTQ processing), set `store_sequences = TRUE`
-#' and `store_gtf = TRUE` (the defaults) to include the reference data needed
-#' for minimap2 alignment and Bambu quantification.
+#' and `store_gtf = TRUE` to include the reference data needed for minimap2
+#' alignment and Bambu quantification. Both options default to `FALSE`.
 #'
 #' @export
 #'

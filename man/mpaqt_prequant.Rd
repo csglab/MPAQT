@@ -96,8 +96,8 @@ prequant <- mpaqt_prequant(
     positional_bias = "3p"
 )
 
-# Use weights in main quantification
-result <- mpaqt_quant(
+# Use weights in post-quantification
+result <- mpaqt_postquant(
     index = idx,
     sr_counts = sr,
     prequant = prequant
