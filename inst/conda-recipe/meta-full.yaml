@@ -3,7 +3,7 @@ package:
   version: "2.4.0"
 
 source:
-  git_url: https://github.com/csglab/MPAQT_merged.git
+  git_url: https://github.com/csglab/MPAQT.git
   git_rev: main
 
 build:
@@ -61,7 +61,7 @@ test:
     - R -e "library(bambu)"
 
 about:
-  home: https://github.com/csglab/MPAQT_merged
+  home: https://github.com/csglab/MPAQT
   license: MIT
   license_family: MIT
   license_file: LICENSE
@@ -71,8 +71,8 @@ about:
     integrates short-read and long-read sequencing data for improved accuracy.
     This full version includes all optional dependencies for long-read FLNC
     processing (minimap2, samtools, bambu) and transcriptome extraction.
-  doc_url: https://csglab.github.io/mpaqt2/
-  dev_url: https://github.com/csglab/MPAQT_merged
+  doc_url: https://csglab.github.io/MPAQT/
+  dev_url: https://github.com/csglab/MPAQT
 
 extra:
   recipe-maintainers:

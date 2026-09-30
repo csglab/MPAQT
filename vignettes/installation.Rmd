@@ -33,11 +33,10 @@ Install R (>= 4.0.0) from [CRAN](https://cran.r-project.org/) with compilation t
 install.packages("pak")
 
 # Install MPAQT from GitHub
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/MPAQT")
 ```
 
-The source repository is currently private. GitHub installation requires
-repository access and credentials configured for `pak`.
+The source repository is public. GitHub credentials are optional and can help avoid API rate limits.
 
 pak will automatically:
 
@@ -53,11 +52,10 @@ If you prefer using devtools:
 install.packages("devtools")
 
 # Install MPAQT from GitHub
-devtools::install_github("csglab/MPAQT_merged")
+devtools::install_github("csglab/MPAQT")
 ```
 
-This method also requires access to the private source repository and
-configured GitHub credentials.
+The source repository is public; no invitation is needed to download it.
 
 ## Installing from Local Source
 
@@ -359,7 +357,7 @@ If you encounter version conflicts with Bioconductor packages:
 BiocManager::install()
 
 # Then reinstall MPAQT
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/MPAQT")
 ```
 
 This source-installation command requires access to the private source
@@ -404,7 +402,7 @@ install.packages("Matrix")
 ```r
 # R packages
 install.packages("pak")
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/MPAQT")
 ```
 
 This source-installation command requires access to the private source
@@ -416,7 +414,7 @@ Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bust
 
 ```r
 # R packages
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/MPAQT")
 BiocManager::install(c("Biostrings", "rtracklayer", "bambu", "BSgenome"))
 ```
 
