@@ -47,6 +47,7 @@ inst/docker/mpaqt-source/
 inst/docker/environment.yml
 inst/apptainer/mpaqt-source/
 inst/apptainer/environment.yml
+inst/conda-recipe/output/
 
 # Release artifacts
 releases/

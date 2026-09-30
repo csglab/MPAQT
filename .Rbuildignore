@@ -2,6 +2,12 @@
 ^VERSION$
 ^release_.*\.sh$
 ^release_common\.sh$
+^AGENTS\.md$
+^\.lintr\.R$
+^\.agents$
+^\.codex$
+^build$
+^debug$
 
 ^log\.txt$
 ^release_log\.txt$

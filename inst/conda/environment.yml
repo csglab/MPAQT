@@ -27,8 +27,8 @@ dependencies:
   # GPBoost (may need special handling)
   - r-gpboost
 
-  # CLI argument parsing
-  - r-optparse
+  # CLI argument parsing is disabled while the CLI remains unsupported.
+  # - r-optparse
   
   - bioconductor-biostrings
   - bioconductor-rtracklayer

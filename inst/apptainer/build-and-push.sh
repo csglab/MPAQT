@@ -1,92 +1,85 @@
 #!/bin/bash
+set -euo pipefail
 
 # Configuration - use env vars if set, else defaults
 SYLABS_USER="${SYLABS_USER:-csglab}"
 IMAGE_NAME="mpaqt"
 
-# Parse arguments
-AUTO_YES=false
-[[ "$1" == "-y" ]] && AUTO_YES=true
+# Parse mode. Building is the safe default; publishing is always explicit.
+MODE="${1:---build-only}"
+case "$MODE" in
+    --build-only|--publish|--publish-only) ;;
+    -y) MODE="--publish" ;;
+    *)
+        echo "Usage: $0 [--build-only|--publish|--publish-only]"
+        exit 2
+        ;;
+esac
 
 cd "$(dirname "$0")"
 
 # Read version from VERSION file
-VERSION=$(cat ../../VERSION | tr -d '[:space:]')
+VERSION=$(tr -d '[:space:]' < ../../VERSION)
 SIF_FILE="mpaqt_${VERSION}.sif"
+LIBRARY_URI="library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:${VERSION}"
+
+if ! command -v apptainer >/dev/null 2>&1; then
+    echo "ERROR: Apptainer is not installed or not in PATH"
+    exit 1
+fi
+
+push_image() {
+    apptainer remote add --no-login SylabsCloud https://cloud.sylabs.io 2>/dev/null ||
+        true
+
+    if [[ -n "${SYLABS_TOKEN:-}" ]]; then
+        echo "$SYLABS_TOKEN" |
+            apptainer remote login --tokenfile /dev/stdin SylabsCloud
+    fi
+
+    apptainer push -U "$SIF_FILE" "$LIBRARY_URI"
+    apptainer push -U "$SIF_FILE" "library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:latest"
+}
+
+if [[ "$MODE" == "--publish-only" ]]; then
+    [[ -f "$SIF_FILE" ]] || {
+        echo "ERROR: Missing $SIF_FILE"
+        exit 1
+    }
+    push_image
+    exit 0
+fi
 
 echo "=== Building MPAQT Apptainer Image (stable) v${VERSION} ==="
+
+PUBLIC_PULL_HOME=$(mktemp -d)
+cleanup() {
+    rm -f environment.yml
+    rm -rf mpaqt-source
+    rm -rf "$PUBLIC_PULL_HOME"
+}
+trap cleanup EXIT
 
 # Prepare build context
 echo "Preparing build context..."
 cp ../conda/environment.yml ./environment.yml
 
 # Extract package from tarball
-rm -rf ./mpaqt-source
-cp ../../releases/mpaqt_${VERSION}.tar.gz ./
-tar -xzf mpaqt_${VERSION}.tar.gz
-mv mpaqt mpaqt-source
-rm mpaqt_${VERSION}.tar.gz
-
-# Build (requires root or fakeroot)
-echo "Building Apptainer image..."
-apptainer build --fakeroot ${SIF_FILE} mpaqt.def
-
-# Cleanup build context
-rm -f environment.yml
+TARBALL="../../releases/mpaqt_${VERSION}.tar.gz"
+[[ -f "$TARBALL" ]] || {
+    echo "ERROR: Missing $TARBALL"
+    exit 1
+}
 rm -rf mpaqt-source
+tar -xzf "$TARBALL"
+mv mpaqt mpaqt-source
 
-# Show image size
-echo ""
-echo "Image size:"
-ls -lh ${SIF_FILE}
+# Build and test (requires root or fakeroot)
+HOME="$PUBLIC_PULL_HOME" apptainer build --fakeroot "$SIF_FILE" mpaqt.def
+ls -lh "$SIF_FILE"
+apptainer test "$SIF_FILE"
+echo "Build and tests complete: ${SIF_FILE}"
 
-# Run tests
-echo ""
-echo "Running tests..."
-apptainer test ${SIF_FILE}
-
-echo ""
-echo "Build complete: ${SIF_FILE}"
-
-# Push to Sylabs Cloud
-if [[ "$AUTO_YES" == true ]]; then
-    # Auto mode: push without prompting
-    echo ""
-    echo "Pushing to Sylabs Cloud..."
-
-    # Add remote if not exists
-    apptainer remote add --no-login SylabsCloud https://cloud.sylabs.io 2>/dev/null || true
-
-    # Login with token from env var (non-interactive)
-    if [[ -n "$SYLABS_TOKEN" ]]; then
-        echo "$SYLABS_TOKEN" | apptainer remote login --tokenfile /dev/stdin SylabsCloud 2>/dev/null || true
-    fi
-
-    apptainer push -U ${SIF_FILE} library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:${VERSION}
-    apptainer push -U ${SIF_FILE} library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:latest
-    echo "Done! Images available at:"
-    echo "  - library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:${VERSION}"
-    echo "  - library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:latest"
-else
-    # Interactive mode
-    read -p "Push to Sylabs Cloud? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        # Add remote if not exists
-        apptainer remote add --no-login SylabsCloud https://cloud.sylabs.io 2>/dev/null || true
-
-        # Login only if not already logged in (check for valid token)
-        if apptainer remote status SylabsCloud 2>&1 | grep -qi "logged in.*yes"; then
-            echo "Already logged in to Sylabs Cloud"
-        else
-            echo "Logging in to Sylabs Cloud..."
-            apptainer remote login SylabsCloud
-        fi
-
-        apptainer push -U ${SIF_FILE} library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:${VERSION}
-        apptainer push -U ${SIF_FILE} library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:latest
-        echo "Done! Images available at:"
-        echo "  - library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:${VERSION}"
-        echo "  - library://${SYLABS_USER}/${IMAGE_NAME}/${IMAGE_NAME}:latest"
-    fi
+if [[ "$MODE" == "--publish" ]]; then
+    push_image
 fi

@@ -4,7 +4,7 @@ package:
 
 source:
   git_url: https://github.com/csglab/mpaqt2.git
-  git_rev: main
+  git_rev: v2.4.0
 
 build:
   number: 0
@@ -21,7 +21,8 @@ requirements:
     - r-rlang >=1.0.0
     - r-stringr
     - r-purrr
-    - r-optparse
+    # CLI-only dependency; disabled while the CLI remains unsupported.
+    # - r-optparse
   run:
     - r-base >=4.0.0
     - r-data.table >=1.14.0
@@ -32,14 +33,18 @@ requirements:
     - r-rlang >=1.0.0
     - r-stringr
     - r-purrr
-    - r-optparse
+    # CLI-only dependency; disabled while the CLI remains unsupported.
+    # - r-optparse
     - kallisto >=0.50.1
     - bustools >=0.43.1
 
 test:
   commands:
     - R -e "library(mpaqt)"
-    - mpaqt --help
+    - R -e "stopifnot(as.character(packageVersion('mpaqt')) == '2.4.0')"
+    # CLI smoke test disabled; the release exposes only the R API.
+    # - mpaqt --help
+    - test ! -e "$PREFIX/bin/mpaqt"
     - kallisto version
     - bustools version
 

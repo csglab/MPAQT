@@ -7,14 +7,14 @@ WORKDIR /build
 COPY environment.yml /build/environment.yml
 COPY mpaqt-source /build/mpaqt-source
 
-# Install mamba, create environment, and install mpaqt package
-RUN conda install -n base -c conda-forge mamba -y && \
-    mamba env create -f environment.yml && \
+# Create environment with the solver bundled in the base image.
+# Installing standalone mamba can break resolution of older Bioconda builds.
+RUN conda env create --solver libmamba -f environment.yml && \
     # Install mpaqt R package
     /opt/conda/envs/mpaqt-dev/bin/R CMD INSTALL /build/mpaqt-source && \
-    # Copy CLI script to environment bin
-    cp /build/mpaqt-source/inst/bin/mpaqt /opt/conda/envs/mpaqt-dev/bin/mpaqt && \
-    chmod +x /opt/conda/envs/mpaqt-dev/bin/mpaqt && \
+    # CLI exposure is intentionally disabled; use the R API.
+    # cp /build/mpaqt-source/inst/bin/mpaqt /opt/conda/envs/mpaqt-dev/bin/mpaqt && \
+    # chmod +x /opt/conda/envs/mpaqt-dev/bin/mpaqt && \
     # Pack the environment
     conda install -c conda-forge conda-pack -y && \
     conda-pack -n mpaqt-dev -o /tmp/env.tar.gz && \

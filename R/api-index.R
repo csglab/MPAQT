@@ -605,7 +605,8 @@ process_index_chunk <- function(
 
     # Calculate read IDs (0-based for kallisto)
     chunk_dt[, cumsum_reads := cumsum(num_reads)]
-    chunk_dt[, read_id_start := c(0, cumsum_reads[1:(.N - 1)])]
+    # chunk_dt[, read_id_start := c(0, cumsum_reads[1:(.N - 1)])]
+    chunk_dt[, read_id_start := c(0, cumsum_reads[seq_len(.N - 1L)])]
     chunk_dt[, read_id_end := cumsum_reads - 1]
 
     read_ids <- purrr::pmap(

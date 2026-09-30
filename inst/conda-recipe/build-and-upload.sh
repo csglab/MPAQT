@@ -1,72 +1,67 @@
 #!/bin/bash
+set -euo pipefail
 
 # Configuration - use env vars if set, else defaults
 CONDA_USER="${CONDA_USER:-csglab}"
 PKG_NAME="r-mpaqt"
 
-# Parse arguments
-AUTO_YES=false
-[[ "$1" == "-y" ]] && AUTO_YES=true
+# Parse mode. Building is the safe default; publishing is always explicit.
+MODE="${1:---build-only}"
+case "$MODE" in
+    --build-only|--publish|--publish-only) ;;
+    -y) MODE="--publish" ;;
+    *)
+        echo "Usage: $0 [--build-only|--publish|--publish-only]"
+        exit 2
+        ;;
+esac
 
 cd "$(dirname "$0")"
 
 # Read version from VERSION file
-VERSION=$(cat ../../VERSION | tr -d '[:space:]')
+VERSION=$(tr -d '[:space:]' < ../../VERSION)
 
-# Configure git credentials for private repo access (in auto mode)
-if [[ "$AUTO_YES" == true && -n "$GITHUB_USER" && -n "$GITHUB_TOKEN" ]]; then
-    git config --global credential.helper '!f() { echo "username='$GITHUB_USER'"; echo "password='$GITHUB_TOKEN'"; }; f'
-fi
+find_package() {
+    find ./output -type f \
+        \( -name "${PKG_NAME}-${VERSION}-*.tar.bz2" -o \
+        -name "${PKG_NAME}-${VERSION}-*.conda" \) \
+        -print -quit 2>/dev/null || true
+}
 
-# Build the conda package
-echo "Building conda package ${PKG_NAME} v${VERSION}..."
-if ! conda build . --output-folder ./output; then
-    echo "ERROR: conda build failed"
-    exit 1
-fi
+upload_package() {
+    local package="$1"
 
-# Find the built package (support both .tar.bz2 and .conda formats)
-PACKAGE=$(find ./output -name "${PKG_NAME}-*.tar.bz2" -o -name "${PKG_NAME}-*.conda" 2>/dev/null | head -1)
-echo "Built package: ${PACKAGE}"
+    command -v anaconda >/dev/null 2>&1 || {
+        echo "ERROR: anaconda-client is not installed or not in PATH"
+        return 1
+    }
 
-# Verify package was found
-if [[ -z "$PACKAGE" ]]; then
-    echo "ERROR: No package found in ./output"
-    echo "Contents of ./output:"
-    ls -la ./output 2>/dev/null || echo "  (directory does not exist)"
-    exit 1
-fi
-
-# Upload to Anaconda
-if [[ "$AUTO_YES" == true ]]; then
-    # Auto mode: upload without prompting
-    echo ""
-    echo "Uploading to anaconda.org/${CONDA_USER}..."
-
-    # Login with token from env var (non-interactive)
-    if [[ -n "$CONDA_TOKEN" ]]; then
-        anaconda -t "$CONDA_TOKEN" upload --force -u ${CONDA_USER} ${PACKAGE}
+    if [[ -n "${CONDA_TOKEN:-}" ]]; then
+        anaconda -t "$CONDA_TOKEN" upload -u "$CONDA_USER" "$package"
     else
-        anaconda upload --force -u ${CONDA_USER} ${PACKAGE}
+        anaconda upload -u "$CONDA_USER" "$package"
     fi
-    echo "Done! Package available at: anaconda.org/${CONDA_USER}/${PKG_NAME}"
-else
-    # Interactive mode
-    read -p "Upload to anaconda.org/${CONDA_USER}? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        # Login only if not already logged in
-        if ! anaconda whoami &>/dev/null; then
-            echo "Logging in to Anaconda..."
-            anaconda login
-        else
-            echo "Already logged in to Anaconda"
-        fi
+}
 
-        anaconda upload --force -u ${CONDA_USER} ${PACKAGE}
-        echo "Done! Package available at: anaconda.org/${CONDA_USER}/${PKG_NAME}"
-    fi
+if [[ "$MODE" == "--publish-only" ]]; then
+    PACKAGE=$(find_package)
+    [[ -n "$PACKAGE" ]] || {
+        echo "ERROR: No validated ${PKG_NAME} ${VERSION} package found in ./output"
+        exit 1
+    }
+    upload_package "$PACKAGE"
+    exit 0
 fi
 
-# Cleanup
-rm -rf ./output
+echo "Building conda package ${PKG_NAME} v${VERSION}..."
+conda build . --output-folder ./output
+PACKAGE=$(find_package)
+[[ -n "$PACKAGE" ]] || {
+    echo "ERROR: No package found in ./output"
+    exit 1
+}
+echo "Build and tests complete: ${PACKAGE}"
+
+if [[ "$MODE" == "--publish" ]]; then
+    upload_package "$PACKAGE"
+fi

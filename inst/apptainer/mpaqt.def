@@ -18,18 +18,16 @@ From: continuumio/miniconda3:latest
     export CONDA_DEFAULT_ENV=mpaqt
 
 %post
-    # Install mamba for faster dependency resolution
-    /opt/conda/bin/conda install -n base -c conda-forge mamba -y
-
-    # Create environment from yml file
-    /opt/conda/bin/mamba env create -f /opt/environment.yml
+    # Use the solver bundled with the base image. Installing standalone mamba
+    # here can upgrade libmamba and break resolution of older Bioconda builds.
+    /opt/conda/bin/conda env create --solver libmamba -f /opt/environment.yml
 
     # Install mpaqt R package
     /opt/conda/envs/mpaqt/bin/R CMD INSTALL /opt/mpaqt-source
 
-    # Copy CLI script to bin and make executable
-    cp /opt/mpaqt-source/inst/bin/mpaqt /opt/conda/envs/mpaqt/bin/mpaqt
-    chmod +x /opt/conda/envs/mpaqt/bin/mpaqt
+    # CLI exposure is intentionally disabled; use the R API.
+    # cp /opt/mpaqt-source/inst/bin/mpaqt /opt/conda/envs/mpaqt/bin/mpaqt
+    # chmod +x /opt/conda/envs/mpaqt/bin/mpaqt
 
     # Clean up to reduce image size
     /opt/conda/bin/conda clean --all -y
@@ -49,8 +47,10 @@ From: continuumio/miniconda3:latest
     R --version | head -1
     kallisto version
     bustools version
-    R --slave -e 'library(mpaqt); cat("MPAQT version:", as.character(packageVersion("mpaqt")), "\n")'
-    mpaqt --help | head -5
+    R --slave -e 'library(mpaqt); stopifnot(as.character(packageVersion("mpaqt")) == "2.4.0"); cat("MPAQT 2.4.0 OK\n")'
+    # CLI smoke test disabled; the release exposes only the R API.
+    # mpaqt --help | head -5
+    test ! -e /opt/conda/envs/mpaqt/bin/mpaqt
     echo "All tests passed!"
 
 %help
@@ -58,17 +58,11 @@ From: continuumio/miniconda3:latest
 
     Usage:
       apptainer run mpaqt.sif R
-      apptainer run mpaqt.sif mpaqt --help
-      apptainer run mpaqt.sif mpaqt index ...
       apptainer exec mpaqt.sif Rscript your_script.R
+      apptainer exec mpaqt.sif Rscript -e 'library(mpaqt)'
 
-    CLI Commands:
-      mpaqt index      - Create index from transcriptome/annotation
-      mpaqt prepare-sr - Prepare short-read data
-      mpaqt prepare-lr - Prepare long-read data
-      mpaqt quant      - Run quantification (bulk)
-      mpaqt quant-sc   - Run quantification (single-cell)
-      mpaqt run        - Full pipeline
+    This release exposes the supported R API. See the documentation for
+    indexing, data preparation, and quantification examples.
 
     Authors: Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi
     Documentation: https://csglab.github.io/mpaqt2/
