@@ -5,8 +5,7 @@ on:
 
 jobs:
   pkgdown:
-    # Private staging: publishing stays disabled until a separate approved cutover.
-    if: github.repository == 'csglab/MPAQT'
+    if: github.repository == 'csglab/MPAQT' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write

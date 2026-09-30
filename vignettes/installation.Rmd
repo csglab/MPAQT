@@ -33,7 +33,7 @@ Install R (>= 4.0.0) from [CRAN](https://cran.r-project.org/) with compilation t
 install.packages("pak")
 
 # Install MPAQT from GitHub
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/MPAQT")
 ```
 
 pak will automatically:
@@ -51,7 +51,7 @@ If you prefer using devtools:
 install.packages("devtools")
 
 # Install MPAQT from GitHub
-devtools::install_github("csglab/MPAQT_merged")
+devtools::install_github("csglab/MPAQT")
 ```
 
 ## Installing from Local Source
@@ -350,7 +350,7 @@ If you encounter version conflicts with Bioconductor packages:
 BiocManager::install(version = "3.18")  # Use latest stable version
 
 # Then reinstall MPAQT
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/MPAQT")
 ```
 
 ### gpboost Installation Issues
@@ -392,7 +392,7 @@ install.packages("Matrix")
 ```r
 # R packages
 install.packages("pak")
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/MPAQT")
 ```
 
 Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bustools](https://github.com/BUStools/bustools) (>= 0.43.1).
@@ -401,7 +401,7 @@ Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bust
 
 ```r
 # R packages
-pak::pak("csglab/MPAQT_merged")
+pak::pak("csglab/MPAQT")
 BiocManager::install(c("Biostrings", "rtracklayer", "bambu", "BSgenome"))
 ```
 
