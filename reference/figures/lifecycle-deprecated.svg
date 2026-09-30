@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="154" height="20" role="img" aria-label="lifecycle: deprecated">
+  <title>lifecycle: deprecated</title>
+  <rect width="154" height="20" rx="3" fill="#555"/>
+  <path d="M57 0h94a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H57z" fill="#a34b00"/>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Arial,sans-serif" font-size="11">
+    <text x="29" y="14">lifecycle</text>
+    <text x="105" y="14">deprecated</text>
+  </g>
+</svg>
