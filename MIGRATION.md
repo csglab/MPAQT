@@ -26,3 +26,24 @@ Before a separately approved public cutover: choose the final repository name,
 update repository and documentation URLs across maintained branches, configure
 Pages, review protections/access, and verify releases and installation links.
 Repository visibility must remain private until explicitly approved.
+
+## Source mapping
+
+| Source | New branch or tag | Source commit |
+|---|---|---|
+| `csglab/MPAQT:origin/archive` | `mpaqt-v0` | `01b56438e70fe8fc53f7ed01c51473375b2572a4` |
+| `csglab/MPAQT:origin/main` | `mpaqt-v1` | `fe5011b5bb0b861461d963573257809f7d45ade6` |
+| `csglab/mpaqt2:v2.0.0` | `v2.0.0` | `47ac1489050fdf1d8c208ba43a80d515bdb24f52` |
+| `csglab/mpaqt2:origin/mpaqt-cli` | `mpaqt-v2-cli` | `a1f466c1b66923a460bfcf5ebc6ddb9458816aa8` |
+| `csglab/mpaqt2:origin/mpaqt-r` | `mpaqt-v2-r` | `7cef1b97da1253c5f66bd0032820c0a71f3ab07a` |
+| `csglab/mpaqt2:v2.4.0` | `v2.4.0` | `ccff2af44c9b16104bc171871d709e4c05e817c4` |
+| `csglab/mpaqt2:origin/main` | `main and mpaqt-v2` | `289635cc5316cef8b06a4c5d05f7942d215f5010` |
+| `csglab/mpaqt2:origin/gh-pages` | `gh-pages` | `5c1a92c8501e84dcc143f709a1b104247e575d78` |
+
+The file `migration-manifest.json` lists imported commits and every excluded path. Import commits preserve every retained file byte and executable permission. Later staging commits change repository references, documentation notices, ignore rules, and CI configuration.
+
+## Verification
+
+All eight imported trees match their retained source files exactly. All reachable Git blobs are below 5 MiB. The existing release-asset checks and installation-harness checks pass; all 21 current R source files parse; `R CMD build --no-build-vignettes --no-manual` succeeds. Full installed-package tests and vignette builds were not run because this machine lacks required packages including `lme4` and `gpboost` (and the site builder `pkgdown`).
+
+The GitHub inventory found no published releases or release attachments in either source repository. Existing issues, pull requests, settings, and wiki content are not imported as Git history; the originals remain available. Before deleting either original, separately preserve any GitHub-only material that should survive. No original repository may be deleted as part of this staging migration.
