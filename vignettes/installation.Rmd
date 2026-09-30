@@ -209,28 +209,18 @@ Ensure all tools are available in your `PATH`.
 Instead of installing manually, you can use a verified pre-built container or
 Conda package. Each artifact includes the dependencies for its stated variant.
 
-The published artifacts listed below contain MPAQT 2.0.0. The current source
-package and this documentation are version 2.4.0; install from source when you
-need the current R API.
+The published artifacts listed below contain MPAQT 2.4.0.
 
 ### Verified Published Variants
 
 | Variant | Verified distribution | Description | Use When |
 |---------|-----------------------|-------------|----------|
-| **stable** | Docker `2.0.0`, Apptainer `2.0.0`, Conda `r-mpaqt` 2.0.0 | Core dependencies only (kallisto, bustools) | Standard short-read workflows |
-| **full** | Apptainer `2.0.0-full` | Includes minimap2, samtools, and Bioconductor packages | Long-read FLNC processing and transcriptome extraction |
-| **dev** | Apptainer `2.0.0-dev` | Includes development and documentation tools | Development and testing |
+| **stable** | Apptainer `2.4.0`, Conda `r-mpaqt` 2.4.0 | Core indexing dependencies (Biostrings, rtracklayer, kallisto, bustools) | Standard short-read workflows |
+| **full** | Apptainer `2.4.0-full`, Conda `r-mpaqt-full` 2.4.0 | Includes minimap2, samtools, and Bioconductor packages | Long-read FLNC processing and transcriptome extraction |
+| **dev** | Apptainer `2.4.0-dev`, Conda `r-mpaqt-dev` 2.4.0 | Includes development and documentation tools | Development and testing |
 
 Only commands for artifacts whose current publication was verified are shown
 below.
-
-### Docker
-
-```bash
-# Stable (recommended for most users)
-docker pull csglab/mpaqt:2.0.0
-docker run -it -v $(pwd):/data csglab/mpaqt:2.0.0
-```
 
 ### Apptainer (for HPC)
 
@@ -248,15 +238,18 @@ Then pull the image:
 
 ```bash
 # Stable
-apptainer pull library://csglab/mpaqt/mpaqt:2.0.0
-apptainer exec mpaqt_2.0.0.sif Rscript analysis.R
+apptainer pull mpaqt_2.4.0.sif \
+  library://csglab/mpaqt/mpaqt:2.4.0
+apptainer exec mpaqt_2.4.0.sif Rscript analysis.R
 
 # Full
-apptainer pull library://csglab/mpaqt/mpaqt:2.0.0-full
-apptainer exec mpaqt_2.0.0-full.sif Rscript analysis.R
+apptainer pull mpaqt_2.4.0-full.sif \
+  library://csglab/mpaqt/mpaqt:2.4.0-full
+apptainer exec mpaqt_2.4.0-full.sif Rscript analysis.R
 
 # Development
-apptainer pull library://csglab/mpaqt/mpaqt:2.0.0-dev
+apptainer pull mpaqt_2.4.0-dev.sif \
+  library://csglab/mpaqt/mpaqt:2.4.0-dev
 ```
 
 ### Conda
@@ -264,16 +257,23 @@ apptainer pull library://csglab/mpaqt/mpaqt:2.0.0-dev
 ```bash
 # Stable
 conda create -n mpaqt \
-  -c csglab -c conda-forge -c bioconda \
+  -c csglab -c conda-forge -c bioconda -c defaults \
   r-mpaqt
 conda activate mpaqt
 ```
 
+The stable Conda package includes `Biostrings`, `rtracklayer`, `kallisto`, and
+`bustools`, which are required to create an index with `mpaqt_index()`. The
+`defaults` channel supplies the `r-gpboost` dependency.
+
+For the full or development variants, replace `r-mpaqt` with
+`r-mpaqt-full` or `r-mpaqt-dev`, respectively.
+
 ### Which Variant Should I Use?
 
 - **stable**: You only need short-read quantification, or you're providing pre-computed long-read counts
-- **full**: You use the verified Apptainer image to process raw FLNC FASTQ files or extract a transcriptome from a BSgenome reference
-- **dev**: You use the verified Apptainer image for development or testing
+- **full**: You process raw FLNC FASTQ files or extract a transcriptome from a BSgenome reference
+- **dev**: You need development, testing, and documentation tools
 
 ---
 

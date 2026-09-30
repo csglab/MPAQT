@@ -29,6 +29,10 @@ dependencies:
   # CLI argument parsing is disabled while the CLI remains unsupported.
   # - r-optparse
 
+  # Required by mpaqt_index()
+  - bioconductor-biostrings
+  - bioconductor-rtracklayer
+
   # External bioinformatics tools (required)
   - kallisto>=0.50.1
   - bustools>=0.43.1

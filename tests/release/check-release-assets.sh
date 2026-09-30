@@ -19,6 +19,19 @@ assert_no_active_match() {
     fi
 }
 
+assert_conda_run_dependency() {
+    local recipe="$1"
+    local dependency="$2"
+
+    if ! awk '
+        /^  run:$/ { in_run = 1; next }
+        in_run && /^  [[:alpha:]_]+:$/ { exit }
+        in_run { print }
+    ' "$recipe" | rg -q "^    - ${dependency}([[:space:]]|$)"; then
+        fail "$recipe is missing required runtime dependency: ${dependency}"
+    fi
+}
+
 # The unfinished CLI remains archived in the R package, but release artifacts
 # must not install it on PATH or advertise it as a supported interface.
 [[ -f inst/bin/mpaqt ]] || fail "inst/bin/mpaqt must remain preserved"
@@ -56,6 +69,17 @@ assert_no_active_match 'conda install .*mamba|/mamba env create' \
     inst/apptainer/mpaqt.def \
     inst/apptainer/mpaqt-full.def \
     inst/apptainer/mpaqt-dev.def
+
+# mpaqt_index() calls both packages directly, so every published Conda
+# variant must install them as runtime dependencies.
+for recipe in \
+    inst/conda-recipe/meta.yaml \
+    inst/conda-recipe/meta-full.yaml \
+    inst/conda-recipe/meta-dev.yaml
+do
+    assert_conda_run_dependency "$recipe" bioconductor-biostrings
+    assert_conda_run_dependency "$recipe" bioconductor-rtracklayer
+done
 
 # Local-only and large development content must never enter the source tarball.
 for pattern in \

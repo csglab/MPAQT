@@ -33,7 +33,6 @@ Choose your preferred installation method:
 | **Local** | Development, customization | [Jump to section](#local-installation) |
 | **Conda** | Simple environment management | [Jump to section](#conda) |
 | **Apptainer** | HPC clusters | [Jump to section](#apptainer) |
-| **Docker** | Reproducibility, portability | [Jump to section](#docker) |
 
 ---
 
@@ -77,43 +76,33 @@ bustools version
 
 ```bash
 conda create -n mpaqt \
-  -c csglab -c conda-forge -c bioconda \
+  -c csglab -c conda-forge -c bioconda -c defaults \
   r-mpaqt
 conda activate mpaqt
 
 R -e 'library(mpaqt)'
 ```
 
+The Conda package includes `Biostrings`, `rtracklayer`, `kallisto`, and
+`bustools`, which are required to create an index with `mpaqt_index()`.
+The `defaults` channel supplies the `r-gpboost` dependency.
+
 ---
 
 ### Apptainer
 
-For HPC clusters without Docker access:
+For HPC clusters:
 
 ```bash
 # Pull image
-apptainer pull docker://csglab/mpaqt:2.0.0 
+apptainer pull mpaqt_2.4.0.sif \
+  library://csglab/mpaqt/mpaqt:2.4.0
 
 # R API usage
-apptainer exec mpaqt_2.0.0.sif R -e 'library(mpaqt)'
+apptainer exec mpaqt_2.4.0.sif R -e 'library(mpaqt)'
 
 # Run interactively
-apptainer shell mpaqt_2.0.0.sif
-```
-
----
-
-### Docker
-
-```bash
-# Pull image
-docker pull csglab/mpaqt:2.0.0
-
-# R API usage
-docker run -v $(pwd):/data csglab/mpaqt:2.0.0 R -e 'library(mpaqt)'
-
-# Run interactively
-docker run -it -v $(pwd):/data csglab/mpaqt:2.0.0
+apptainer shell mpaqt_2.4.0.sif
 ```
 
 ---

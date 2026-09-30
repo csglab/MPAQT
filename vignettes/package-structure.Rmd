@@ -29,8 +29,7 @@ mpaqt2/
 ├── inst/
 │   ├── apptainer/             # Apptainer build assets
 │   ├── conda/                 # Conda environments and setup scripts
-│   ├── conda-recipe/          # Conda package recipes
-│   └── docker/                # Container build assets
+│   └── conda-recipe/          # Conda package recipes
 ├── DESCRIPTION                # Package metadata and dependencies
 ├── NAMESPACE                  # Generated exports and imports
 └── _pkgdown.yml               # Website navigation and reference groups

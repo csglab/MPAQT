@@ -7,7 +7,7 @@ source:
   git_rev: v2.4.0
 
 build:
-  number: 0
+  number: 1
   noarch: generic
 
 requirements:
@@ -35,6 +35,9 @@ requirements:
     - r-purrr
     # CLI-only dependency; disabled while the CLI remains unsupported.
     # - r-optparse
+    # Required by mpaqt_index()
+    - bioconductor-biostrings
+    - bioconductor-rtracklayer
     # Required tools
     - kallisto >=0.50.1
     - bustools >=0.43.1
@@ -62,6 +65,8 @@ test:
   commands:
     - R -e "library(mpaqt)"
     - R -e "stopifnot(as.character(packageVersion('mpaqt')) == '2.4.0')"
+    - R -e "stopifnot(requireNamespace('Biostrings', quietly = TRUE))"
+    - R -e "stopifnot(requireNamespace('rtracklayer', quietly = TRUE))"
     # CLI smoke test disabled; the release exposes only the R API.
     # - mpaqt --help
     - test ! -e "$PREFIX/bin/mpaqt"
