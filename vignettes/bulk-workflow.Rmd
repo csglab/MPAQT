@@ -1,0 +1,996 @@
+---
+title: "Bulk RNA-seq Workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bulk RNA-seq Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This article provides comprehensive documentation of the MPAQT bulk RNA-seq workflow, including all input pathways and algorithm parameters.
+
+## Workflow Overview
+
+```
+BULK WORKFLOW STAGES
+====================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           STAGE 1: INDEX CREATION                           │
+│                                                                             │
+│   Input: GTF annotation + transcriptome (FASTA, genome, or pre-built)       │
+│   Output: mpaqt_index object with P matrices, distances, covariates         │
+│                                                                             │
+│   mpaqt_index() ─────► mpaqt.index.rds                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        STAGE 2: SHORT-READ PROCESSING                       │
+│                                                                             │
+│   Input: FASTQ files, BUS/EC files, or pre-computed RDS                     │
+│   Output: Equivalence class counts (mpaqt_counts_sr)                        │
+│                                                                             │
+│   mpaqt_prepare_short_reads() ─────► mpaqt.short_read.rds                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       STAGE 3: LONG-READ PROCESSING                         │
+│                             (OPTIONAL)                                      │
+│                                                                             │
+│   Input: FLNC FASTQ, Bambu counts, or pre-computed RDS                      │
+│   Output: Transcript counts (mpaqt_counts_lr)                               │
+│                                                                             │
+│   mpaqt_prepare_long_reads() ─────► mpaqt.long_read.rds                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          STAGE 4: QUANTIFICATION                            │
+│                                                                             │
+│   Input: Index + short-read counts + long-read counts (optional)            │
+│   Output: Transcript abundances, TPM, uncertainty                           │
+│                                                                             │
+│   mpaqt_quant() ─────► mpaqt.quant.rds + mpaqt.quant.csv                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Input Pathways Summary
+
+MPAQT supports multiple input pathways for flexibility. Choose the pathway that matches your available data:
+
+### Index Creation Pathways
+
+| Pathway | Inputs | External Tools | Bioconductor Packages |
+|---------|--------|----------------|----------------------|
+| **A: Standard** | GTF + transcriptome FASTA | kallisto | Biostrings, rtracklayer |
+| **B: Genome** | GTF + genome (BSgenome) | kallisto | Biostrings, rtracklayer, BSgenome, GenomicRanges |
+| **C: Pre-built** | GTF + FASTA + kallisto.idx | none | rtracklayer |
+
+### Short-Read Processing Pathways
+
+| Pathway | Inputs | External Tools |
+|---------|--------|----------------|
+| **A: FASTQ** | R1.fastq.gz + R2.fastq.gz | kallisto, bustools |
+| **B: BUS** | output.bus + matrix.ec | bustools |
+| **C: RDS** | mpaqt.short_read.rds | none |
+
+### Long-Read Processing Pathways
+
+| Pathway | Inputs | External Tools | Bioconductor Packages |
+|---------|--------|----------------|----------------------|
+| **A: FLNC** | flnc.fastq.gz + genome | minimap2, samtools | bambu, BSgenome |
+| **B: Bambu counts** | counts_transcript.csv | none | none |
+| **C: RDS** | mpaqt.long_read.rds | none | none |
+
+> **Recommended for long-read integration:** Use **Pathway B (Bambu counts)**. Run Bambu externally and provide the counts CSV. This requires no additional tools or Bioconductor packages.
+
+---
+
+## Progressive Workflow Examples
+
+This section demonstrates MPAQT capabilities through progressively complex examples. Each level shows **CLI first, then R API**.
+
+### Level 1: Short-Read Only
+
+The simplest MPAQT workflow uses only short-read data.
+
+#### Using CLI
+
+```bash
+# Step 1: Create index (one-time setup)
+mpaqt index \
+  --transcriptome reference/transcripts.fa \
+  --annotation reference/annotation.gtf \
+  --output my_index.rds \
+  --threads 8
+
+# Step 2: Process short reads
+mpaqt prepare-sr my_index.rds \
+  --fastq-r1 sample_R1.fastq.gz \
+  --fastq-r2 sample_R2.fastq.gz \
+  --output-dir results/ \
+  --threads 8
+
+# Step 3: Quantify
+mpaqt quant my_index.rds results/mpaqt.sr.rds \
+  --output-dir results/
+```
+
+#### Using R API
+
+```{r level1-r, eval=FALSE}
+library(mpaqt)
+
+# Step 1: Create index
+index <- mpaqt_index(
+  annotation = "reference/annotation.gtf",
+  transcriptome = "reference/transcripts.fa",
+  output_file = "my_index.rds",
+  threads = 8
+)
+
+# Step 2: Process short reads
+sr_counts <- mpaqt_prepare_short_reads(
+  index = index,
+  fastq_1 = "sample_R1.fastq.gz",
+  fastq_2 = "sample_R2.fastq.gz",
+  output_dir = "results/",
+  threads = 8
+)
+
+# Step 3: Quantify
+result <- mpaqt_quant(index, sr_counts)
+
+# Extract TPM
+tpm_values <- tpm(result)
+head(tpm_values)
+```
+
+---
+
+### Level 2: Short-Read + Long-Read Integration
+
+Adding long-read data improves quantification accuracy, especially for genes with complex splicing patterns. MPAQT uses long-read counts as prior information in a MAP estimation framework.
+
+#### Using CLI
+
+```bash
+# Prepare long-read counts (from Bambu output)
+mpaqt prepare-lr my_index.rds \
+  --counts-file bambu_counts.csv \
+  --output-dir results/
+
+# Quantify with both data types
+mpaqt quant my_index.rds results/mpaqt.sr.rds \
+  --lr-counts results/mpaqt.lr.rds \
+  --output-dir results/
+```
+
+#### Using R API
+
+```{r level2-r, eval=FALSE}
+# Prepare long-read counts (from Bambu)
+lr_counts <- mpaqt_prepare_long_reads(
+  index = index,
+  counts_file = "bambu_counts.csv",
+  output_dir = "results/"
+)
+
+# Quantify with both data types
+result <- mpaqt_quant(
+  index = index,
+  sr_counts = sr_counts,
+  lr_counts = lr_counts
+)
+
+# Results now incorporate long-read information
+tpm_values <- tpm(result)
+```
+
+---
+
+### Level 3: Adding Positional Bias Correction
+
+For 3' poly(A)-selected libraries, reads are enriched near transcript 3' ends. Enable bias correction for more accurate abundance estimates.
+
+#### Using CLI
+
+```bash
+mpaqt quant my_index.rds results/mpaqt.sr.rds \
+  --lr-counts results/mpaqt.lr.rds \
+  --bias 3p \
+  --bins 50 \
+  --output-dir results/
+```
+
+#### Using R API
+
+```{r level3-r, eval=FALSE}
+result <- mpaqt_quant(
+  index = index,
+  sr_counts = sr_counts,
+  lr_counts = lr_counts,
+  positional_bias = "3p",
+  n_bins = 50
+)
+```
+
+> **Note:** Use `positional_bias = "5p"` for 5'-biased protocols (e.g., some single-cell methods).
+
+---
+
+### Level 4: Full Configuration with Prior Integration
+
+For publication-quality results, enable all features including uncertainty estimation. Prior integration is automatic when long-read data is provided.
+
+#### Using CLI
+
+```bash
+mpaqt quant my_index.rds results/mpaqt.sr.rds \
+  --lr-counts results/mpaqt.lr.rds \
+  --bias 3p \
+  --bins 50 \
+  --prior-start 25 \
+  --compute-uncertainty \
+  --output-dir results/
+```
+
+#### Using R API
+
+```{r level4-r, eval=FALSE}
+result <- mpaqt_quant(
+  index = index,
+  sr_counts = sr_counts,
+  lr_counts = lr_counts,
+  positional_bias = "3p",
+  n_bins = 50,
+  prior_model = "shrinkage",
+  prior_start = 25,
+  compute_uncertainty = TRUE
+)
+
+# Access all results
+tpm_values <- tpm(result)
+se <- uncertainty(result)
+gene_tpm <- gene_abundances(result, index)
+
+# Save results
+mpaqt_save_result(result, "results/")
+```
+
+> **Note:** The `--prior-start` option controls when the EM algorithm starts incorporating the prior (default: iteration 25). Prior integration is automatic when long-read data is provided.
+
+---
+
+## Detailed Reference
+
+The following sections provide comprehensive documentation for each stage.
+
+---
+
+## Stage 1: Index Creation
+
+The MPAQT index contains all reference data needed for quantification:
+
+- **Kallisto index**: For short-read pseudoalignment
+- **P matrices**: Mapping equivalence classes to transcripts with positional information
+- **Distance matrices**: 5' and 3' distances for bias correction
+- **Covariate matrix**: Transcript length, GC content, biotype
+- **Transcript-gene mappings**: For gene-level aggregation
+
+### Input Pathways
+
+```
+INDEX CREATION PATHWAYS
+=======================
+
+Pathway A: GTF + Transcriptome FASTA (Recommended)
+──────────────────────────────────────────────────
+  mpaqt_index(
+      annotation   = "gencode.v44.gtf",
+      transcriptome = "gencode.v44.transcripts.fa"
+  )
+
+Pathway B: GTF + BSgenome (Extract transcriptome)
+─────────────────────────────────────────────────
+  mpaqt_index(
+      annotation = "gencode.v44.gtf",
+      genome     = "BSgenome.Hsapiens.UCSC.hg38"
+  )
+
+Pathway C: GTF + FASTA + Pre-built Kallisto Index
+─────────────────────────────────────────────────
+  mpaqt_index(
+      annotation     = "gencode.v44.gtf",
+      transcriptome  = "gencode.v44.transcripts.fa",
+      kallisto_index = "prebuilt.kallisto.idx"
+  )
+```
+
+### Function Reference: `mpaqt_index()`
+
+```r
+mpaqt_index(
+  annotation,           # Path to GTF annotation file (required)
+  transcriptome = NULL, # Path to transcriptome FASTA
+  genome = NULL,        # BSgenome object or package name
+  kallisto_index = NULL,# Path to pre-built Kallisto index
+  output_file = "mpaqt.index.rds",
+  read_length = 75L,    # Expected read length
+  stride = 1L,          # Stride for read simulation
+  threads = 1L,
+  chunk_size = 10000000L,
+  store_sequences = TRUE,  # Store sequences for long-read workflows
+  store_gtf = TRUE,        # Store GTF for long-read workflows
+  temp_dir = tempdir(),
+  keep_temp = FALSE,
+  verbose = TRUE
+)
+```
+
+### Key Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `annotation` | (required) | GTF file with transcript and gene annotations |
+| `transcriptome` | NULL | FASTA file with transcript sequences |
+| `genome` | NULL | BSgenome name for transcript extraction |
+| `kallisto_index` | NULL | Pre-built Kallisto index to reuse |
+| `read_length` | 75 | Expected read length (affects P matrix construction) |
+| `store_sequences` | TRUE | Bundle transcriptome for long-read workflows |
+| `store_gtf` | TRUE | Bundle GTF for long-read workflows |
+
+### Example: Complete Index Creation
+
+```r
+library(mpaqt)
+
+# Create index from Gencode reference
+index <- mpaqt_index(
+  annotation = "reference/gencode.v44.annotation.gtf",
+  transcriptome = "reference/gencode.v44.transcripts.fa",
+  output_file = "my_project/mpaqt.index.rds",
+  read_length = 75,
+  threads = 8,
+  store_sequences = TRUE,  # Enable for long-read workflows
+  store_gtf = TRUE
+)
+
+# View index summary
+print(index)
+# mpaqt_index object
+#   Transcripts: 253,863
+#   Genes: 63,234
+#   Equivalence classes: 1,847,293
+#   Has kallisto index: yes (bundled)
+#   Has transcriptome: yes
+#   Has GTF: yes
+```
+
+### Index Internals
+
+The index creation process:
+
+1. **Parse GTF**: Extract transcript-gene mappings and biotypes
+2. **Process FASTA**: Compute GC content and append polyA tails
+3. **Build Kallisto index**: For pseudoalignment
+4. **Simulate reads**: Generate reads from every position in each transcript
+5. **Run kallisto bus**: Determine equivalence class memberships
+6. **Build P matrices**: Store EC-transcript counts with positional distances
+7. **Bundle**: Create single portable file with all components
+
+---
+
+## Stage 2: Short-Read Processing
+
+Convert Illumina short-read data to equivalence class counts.
+
+### Input Pathways
+
+```
+SHORT-READ PROCESSING PATHWAYS
+==============================
+
+Pathway A: Raw FASTQ Files (Runs kallisto bus internally)
+─────────────────────────────────────────────────────────
+  mpaqt_prepare_short_reads(
+      index   = index,
+      fastq_1 = "sample_R1.fastq.gz",
+      fastq_2 = "sample_R2.fastq.gz"
+  )
+
+Pathway B: Pre-computed BUS + EC Files
+──────────────────────────────────────
+  mpaqt_prepare_short_reads(
+      index    = index,
+      bus_file = "kallisto_out/output.bus",
+      ec_file  = "kallisto_out/matrix.ec"
+  )
+
+Pathway C: Pre-computed RDS File
+────────────────────────────────
+  mpaqt_prepare_short_reads(
+      index    = index,
+      rds_file = "previous_run/mpaqt.short_read.rds"
+  )
+```
+
+### Function Reference: `mpaqt_prepare_short_reads()`
+
+```r
+mpaqt_prepare_short_reads(
+  index,              # mpaqt_index object
+  fastq_1 = NULL,     # Forward FASTQ (R1)
+  fastq_2 = NULL,     # Reverse FASTQ (R2)
+  bus_file = NULL,    # Pre-computed BUS file
+  ec_file = NULL,     # Pre-computed EC mapping file
+  rds_file = NULL,    # Pre-computed RDS file
+  output_dir = tempdir(),
+  threads = 1L,
+  verbose = TRUE
+)
+```
+
+### Key Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `fastq_1`, `fastq_2` | Paired-end FASTQ files (gzipped OK) |
+| `bus_file`, `ec_file` | Pre-computed kallisto bus output |
+| `rds_file` | Previously saved counts (fastest pathway) |
+| `threads` | Parallel threads for kallisto |
+
+### Example: Process Short Reads
+
+```r
+# From raw FASTQ files
+sr_counts <- mpaqt_prepare_short_reads(
+  index = index,
+  fastq_1 = "data/sample_R1.fastq.gz",
+  fastq_2 = "data/sample_R2.fastq.gz",
+  output_dir = "results/",
+  threads = 8
+)
+
+# View counts summary
+print(sr_counts)
+# mpaqt_counts_sr object
+#   Equivalence classes: 847,293
+#   Total counts: 45,238,193
+#   Sample ID: sample
+
+# Counts are automatically saved to output_dir
+# Load later with:
+sr_counts <- mpaqt_read_short_read_counts("results/mpaqt.short_read.rds")
+```
+
+### Output Structure
+
+The `mpaqt_counts_sr` object contains:
+
+- `ec_counts`: Named numeric vector of EC counts
+- `total_reads`: Total number of reads processed
+- `sample_id`: Sample identifier
+- `input_files`: List of input file paths
+- `processing_info`: Metadata about processing
+
+---
+
+## Stage 3: Long-Read Processing (Optional)
+Long-read data provides direct transcript evidence to resolve ambiguities.
+
+> **Easiest approach:** If you have pre-computed Bambu counts (e.g., from running Bambu externally), use the **Bambu counts pathway**. This requires no additional tools or Bioconductor packages.
+
+### Input Pathways
+
+```
+LONG-READ PROCESSING PATHWAYS
+=============================
+
+Pathway A: FLNC FASTQ (Full pipeline: minimap2 + Bambu)
+───────────────────────────────────────────────────────
+  mpaqt_prepare_long_reads(
+      index      = index,
+      flnc_fastq = "isoseq/sample.flnc.fastq",
+      genome     = "BSgenome.Hsapiens.UCSC.hg38"
+  )
+
+Pathway B: Pre-computed Bambu Counts
+────────────────────────────────────
+  mpaqt_prepare_long_reads(
+      index        = index,
+      bambu_counts = "bambu_output/counts_transcript.csv"
+  )
+
+Pathway C: Pre-computed RDS File
+────────────────────────────────
+  mpaqt_prepare_long_reads(
+      index    = index,
+      rds_file = "previous_run/mpaqt.long_read.rds"
+  )
+```
+
+### Function Reference: `mpaqt_prepare_long_reads()`
+
+```r
+mpaqt_prepare_long_reads(
+  index,                  # mpaqt_index object
+  flnc_fastq = NULL,      # FLNC FASTQ from Iso-Seq
+  genome = NULL,          # Genome for minimap2 alignment
+  bambu_counts = NULL,    # Pre-computed Bambu counts
+  rds_file = NULL,        # Pre-computed RDS file
+  output_dir = tempdir(),
+  threads = 1L,
+  minimap_preset = "splice:hq",  # For Iso-Seq HiFi reads
+  discovery = FALSE,             # Enable novel transcript discovery
+  sample_id = NULL,
+  verbose = TRUE
+)
+```
+
+### Key Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `flnc_fastq` | NULL | Full-length non-chimeric reads from Iso-Seq |
+| `genome` | NULL | Genome FASTA or BSgenome for alignment |
+| `bambu_counts` | NULL | Pre-computed transcript counts from Bambu |
+| `minimap_preset` | "splice:hq" | Preset for minimap2 (splice:hq for HiFi) |
+| `discovery` | FALSE | Allow Bambu novel transcript discovery |
+
+### Example: Process Long Reads
+
+```r
+# From FLNC FASTQ (full pipeline)
+lr_counts <- mpaqt_prepare_long_reads(
+  index = index,
+  flnc_fastq = "data/sample.flnc.fastq.gz",
+  genome = "BSgenome.Hsapiens.UCSC.hg38",
+  output_dir = "results/",
+  threads = 8
+)
+
+# From pre-computed Bambu output
+lr_counts <- mpaqt_prepare_long_reads(
+  index = index,
+  bambu_counts = "bambu/counts_transcript.csv",
+  output_dir = "results/"
+)
+
+# View counts summary
+print(lr_counts)
+# mpaqt_counts_lr object
+#   Transcripts with counts: 45,293
+#   Total counts: 2,134,567
+#   Sample ID: sample
+
+# Load later with:
+lr_counts <- mpaqt_read_long_read_counts("results/mpaqt.long_read.rds")
+```
+
+---
+
+## Stage 4: Quantification
+
+Run the MPAQT EM algorithm to estimate transcript abundances.
+
+### Algorithm Overview
+
+MPAQT maximizes the following objective:
+
+```
+L(beta) = L_SR(beta) + L_LR(beta) - R(beta)
+
+Where:
+  L_SR: Short-read Poisson likelihood over equivalence classes
+  L_LR: Long-read Poisson likelihood over transcripts
+  R:    L2 regularization penalty
+```
+
+The EM algorithm iterates between:
+
+1. **E-step**: Assign read probabilities to transcripts
+2. **M-step**: Update abundance estimates
+
+### Quantification Options
+
+```
+QUANTIFICATION CONFIGURATIONS
+=============================
+
+Basic: Short-reads only
+───────────────────────
+  mpaqt_quant(index, sr_counts)
+
+With Long-reads:
+────────────────
+  mpaqt_quant(index, sr_counts, lr_counts)
+
+With Positional Bias Correction:
+────────────────────────────────
+  mpaqt_quant(index, sr_counts, positional_bias = "3p")
+
+With Shrinkage Prior:
+─────────────────────
+  mpaqt_quant(index, sr_counts, prior_model = "shrinkage")
+
+Full Configuration:
+───────────────────
+  mpaqt_quant(
+      index, sr_counts, lr_counts,
+      positional_bias = "3p",
+      prior_model = "shrinkage",
+      compute_uncertainty = TRUE
+  )
+```
+
+### Function Reference: `mpaqt_quant()`
+
+```r
+mpaqt_quant(
+  index,                      # mpaqt_index object
+  sr_counts,                  # mpaqt_counts_sr object
+  lr_counts = NULL,           # mpaqt_counts_lr object (optional)
+  positional_bias = NULL,     # "3p", "5p", or NULL
+  n_bins = 50L,               # Distance bins for bias correction
+  prior_model = NULL,         # "shrinkage", "long_read", or NULL
+  normalize = "tpm",          # "tpm", "depth", or "none"
+  max_iter = 100L,            # Maximum EM iterations
+  tolerance = 1e-4,           # Convergence tolerance
+  prior_start = 25L,          # Iteration to start using prior
+  convergence_start = 25L,    # Iteration to check convergence
+  compute_uncertainty = FALSE,# Compute standard errors
+  verbose = TRUE
+)
+```
+
+### Key Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `positional_bias` | NULL | Bias correction type: "3p" (poly-A), "5p", or NULL |
+| `n_bins` | 50 | Number of distance bins for bias modeling |
+| `prior_model` | NULL | Prior for regularization |
+| `max_iter` | 100 | Maximum EM iterations |
+| `tolerance` | 1e-4 | Log-likelihood change threshold for convergence |
+| `compute_uncertainty` | FALSE | Bootstrap-based standard errors |
+
+### Positional Bias Correction
+
+For 3' poly(A) selected libraries, reads are enriched near the 3' end of transcripts. The `positional_bias = "3p"` option models this bias:
+
+```r
+# 3' bias correction (recommended for most RNA-seq)
+result <- mpaqt_quant(
+  index = index,
+  sr_counts = sr_counts,
+  positional_bias = "3p",
+  n_bins = 50
+)
+```
+
+### Example: Complete Quantification
+
+```r
+# Full quantification with all features
+result <- mpaqt_quant(
+  index = index,
+  sr_counts = sr_counts,
+  lr_counts = lr_counts,        # Optional long-read integration
+  positional_bias = "3p",       # 3' bias correction
+  prior_model = "shrinkage",    # Regularization
+  max_iter = 100,
+  tolerance = 1e-4,
+  compute_uncertainty = TRUE,   # Bootstrap SEs
+  verbose = TRUE
+)
+
+# View result summary
+print(result)
+# mpaqt_quant_result object
+#   Transcripts: 253,863
+#   Converged: TRUE (47 iterations)
+#   Log-likelihood: -1,234,567.89
+#   Has uncertainty: yes
+```
+
+---
+
+## Extracting Results
+
+### Result Accessors
+
+```r
+# Transcript-level TPM values
+tpm_values <- tpm(result)
+head(tpm_values)
+# ENST00000456328.2 ENST00000450305.2 ENST00000488147.1
+#          0.12345           2.34567           0.00000
+
+# Raw abundances (beta values)
+abundances <- abundances(result)
+
+# Standard errors (if computed)
+if (has_uncertainty(result)) {
+  se <- uncertainty(result)
+}
+
+# Gene-level abundances
+gene_tpm <- gene_abundances(result)
+```
+
+### Saving Results
+
+```r
+# Save full result object + CSV
+mpaqt_save_result(
+  result = result,
+  output_dir = "results/",
+  prefix = "sample1",
+  include_abundances = TRUE,
+  include_uncertainty = TRUE
+)
+
+# Creates:
+#   results/sample1.quant.rds  (full R object)
+#   results/sample1.quant.csv  (TPM values)
+```
+
+### Export Utilities
+
+```r
+# Export to CSV with custom columns
+export_results_csv(
+  result = result,
+  output_file = "results/sample1_tpm.csv",
+  include_abundances = FALSE,
+  include_uncertainty = TRUE
+)
+
+# Combine multiple samples
+results_list <- list(
+  sample1 = result1,
+  sample2 = result2,
+  sample3 = result3
+)
+
+combined <- combine_quant_results(results_list)
+# data.table with transcript_id, sample1, sample2, sample3 columns
+```
+
+---
+
+## Complete Example Workflow
+
+### Using CLI
+
+```bash
+#!/bin/bash
+# Complete bulk RNA-seq MPAQT workflow
+
+# Stage 1: Create index (run once per reference)
+mpaqt index \
+  --transcriptome reference/gencode.v44.transcripts.fa \
+  --annotation reference/gencode.v44.annotation.gtf \
+  --output reference/mpaqt.index.rds \
+  --read-length 75 \
+  --threads 8
+
+# Stage 2: Process short reads
+mpaqt prepare-sr reference/mpaqt.index.rds \
+  --fastq-r1 data/sample_R1.fastq.gz \
+  --fastq-r2 data/sample_R2.fastq.gz \
+  --output-dir results/ \
+  --threads 8
+
+# Stage 3: Process long reads (optional)
+mpaqt prepare-lr reference/mpaqt.index.rds \
+  --counts-file data/bambu_counts.csv \
+  --output-dir results/
+
+# Stage 4: Quantify
+mpaqt quant reference/mpaqt.index.rds results/mpaqt.sr.rds \
+  --lr-counts results/mpaqt.lr.rds \
+  --bias 3p \
+  --compute-uncertainty \
+  --output-dir results/
+
+# Output files:
+#   results/mpaqt.quant.rds   - Full result object
+#   results/mpaqt.quant.csv   - TPM values
+```
+
+**Or use the one-command pipeline:**
+
+```bash
+mpaqt run reference/mpaqt.index.rds \
+  --fastq-r1 data/sample_R1.fastq.gz \
+  --fastq-r2 data/sample_R2.fastq.gz \
+  --lr-counts-file data/bambu_counts.csv \
+  --bias 3p \
+  --output-dir results/ \
+  --threads 8
+```
+
+### Using R API
+
+```r
+library(mpaqt)
+
+#===============================================================================
+# STAGE 1: Create Index (run once per reference)
+#===============================================================================
+
+index <- mpaqt_index(
+  annotation = "reference/gencode.v44.annotation.gtf",
+  transcriptome = "reference/gencode.v44.transcripts.fa",
+  output_file = "reference/mpaqt.index.rds",
+  read_length = 75,
+  threads = 8,
+  store_sequences = TRUE,
+  store_gtf = TRUE
+)
+
+#===============================================================================
+# STAGE 2: Process Short Reads
+#===============================================================================
+
+sr_counts <- mpaqt_prepare_short_reads(
+  index = index,
+  fastq_1 = "data/sample_R1.fastq.gz",
+  fastq_2 = "data/sample_R2.fastq.gz",
+  output_dir = "results/",
+  threads = 8
+)
+
+#===============================================================================
+# STAGE 3: Process Long Reads (Optional)
+#===============================================================================
+
+lr_counts <- mpaqt_prepare_long_reads(
+  index = index,
+  bambu_counts = "data/bambu_counts.csv",
+  output_dir = "results/"
+)
+
+#===============================================================================
+# STAGE 4: Quantify
+#===============================================================================
+
+result <- mpaqt_quant(
+  index = index,
+  sr_counts = sr_counts,
+  lr_counts = lr_counts,
+  positional_bias = "3p",
+  compute_uncertainty = TRUE,
+  verbose = TRUE
+)
+
+#===============================================================================
+# STAGE 5: Extract and Save Results
+#===============================================================================
+
+# Get TPM values
+tpm_values <- tpm(result)
+
+# Get gene-level abundances
+gene_tpm <- gene_abundances(result)
+
+# Save everything
+mpaqt_save_result(result, "results/", prefix = "sample")
+```
+
+---
+
+## Advanced Topics
+
+### Two-Phase Quantification
+
+For more control, run pre-quantification and post-quantification separately:
+
+```r
+# Phase 1: Estimate positional bias weights
+prequant <- mpaqt_prequant(
+  index = index,
+  sr_counts = sr_counts,
+  positional_bias = "3p",
+  n_bins = 50
+)
+
+# Save for reuse
+mpaqt_save_prequant(prequant, "results/")
+
+# Phase 2: Run main EM with pre-computed weights
+result <- mpaqt_postquant(
+  index = index,
+  sr_counts = sr_counts,
+  lr_counts = lr_counts,
+  prequant = prequant,
+  max_iter = 100
+)
+```
+
+### Loading Saved Objects
+
+```r
+# Load index
+index <- mpaqt_read_index("reference/mpaqt.index.rds")
+
+# Load counts
+sr_counts <- mpaqt_read_short_read_counts("results/mpaqt.short_read.rds")
+lr_counts <- mpaqt_read_long_read_counts("results/mpaqt.long_read.rds")
+
+# Load result
+result <- mpaqt_read_result("results/sample.quant.rds")
+```
+
+### Multi-Sample Analysis
+
+```r
+# Process multiple samples
+samples <- c("sample1", "sample2", "sample3")
+
+results <- lapply(samples, function(s) {
+  sr <- mpaqt_prepare_short_reads(
+    index = index,
+    fastq_1 = paste0("data/", s, "_R1.fastq.gz"),
+    fastq_2 = paste0("data/", s, "_R2.fastq.gz"),
+    output_dir = paste0("results/", s, "/")
+  )
+
+  mpaqt_quant(index, sr, positional_bias = "3p")
+})
+names(results) <- samples
+
+# Combine into TPM matrix
+tpm_matrix <- combine_quant_results(results)
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Error: Kallisto not found**
+```
+# Ensure kallisto is in PATH
+Sys.which("kallisto")
+
+# Or install via conda
+# conda install -c bioconda kallisto
+```
+
+**Error: No matching ECs**
+```
+# Transcript IDs in FASTQ/counts must match GTF
+# Check that transcript IDs are consistent
+```
+
+**Convergence issues**
+```r
+# Try increasing max_iter or adjusting tolerance
+result <- mpaqt_quant(
+  index, sr_counts,
+  max_iter = 200,
+  tolerance = 1e-3
+)
+```
+
+### Performance Tips
+
+1. **Use threads**: Set `threads` parameter for kallisto operations
+2. **Reuse index**: Build index once, use for all samples
+3. **Save intermediates**: Use `output_dir` to save counts for reuse
+4. **Skip bias correction**: If not needed, omit `positional_bias`

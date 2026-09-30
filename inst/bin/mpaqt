@@ -1,0 +1,501 @@
+#!/usr/bin/env Rscript
+
+# MPAQT CLI - Command Line Interface for MPAQT package
+# Multi-Platform Accurate Quantification of Transcripts
+
+# ==============================================================================
+# Load dependencies
+# ==============================================================================
+
+suppressPackageStartupMessages({
+  if (!requireNamespace("optparse", quietly = TRUE)) {
+    stop("Package 'optparse' is required. Install with: install.packages('optparse')")
+  }
+  library(optparse)
+})
+
+# ==============================================================================
+# Load MPAQT package
+# ==============================================================================
+
+suppressPackageStartupMessages({
+  if (!requireNamespace("mpaqt", quietly = TRUE)) {
+    stop("Package 'mpaqt' not found. Please install it first.")
+  }
+  library(mpaqt)
+})
+
+# ==============================================================================
+# Main help message
+# ==============================================================================
+
+main_help <- "
+MPAQT: Multi-Platform Accurate Quantification of Transcripts
+
+Usage:
+  mpaqt <command> [options]
+  mpaqt (-h | --help)
+  mpaqt --version
+
+Commands:
+  index         Create MPAQT index from transcriptome/genome and annotation
+  prepare-sr    Prepare short-read data (FASTQ -> EC counts)
+  prepare-lr    Prepare long-read data (FASTQ/counts -> transcript counts)
+  quant         Run quantification on processed counts (bulk)
+  quant-sc      Run quantification on processed counts (single-cell)
+  run           Full pipeline: prepare + quantify in one step
+
+Use 'mpaqt <command> --help' for command-specific options.
+"
+
+# ==============================================================================
+# Option parsers for each command
+# ==============================================================================
+
+make_index_parser <- function() {
+  option_list <- list(
+    make_option("--transcriptome", type = "character", default = NULL,
+                help = "Transcriptome FASTA file"),
+    make_option("--annotation", type = "character", default = NULL,
+                help = "GTF annotation file (required)"),
+    make_option("--kallisto-index", type = "character", default = NULL,
+                help = "Pre-built kallisto index (alternative)"),
+    make_option("--store-sequences", action = "store_true", default = FALSE,
+                help = "Store sequences in index for portability (also bundles kallisto index)"),
+    make_option("--store-gtf", action = "store_true", default = FALSE,
+                help = "Store GTF in index for portability"),
+    make_option(c("-o", "--output"), type = "character", default = "mpaqt.index.rds",
+                help = "Output index file [default: %default]"),
+    make_option(c("-t", "--threads"), type = "integer", default = 1,
+                help = "Number of threads [default: %default]")
+  )
+  OptionParser(
+    usage = "mpaqt index [options]",
+    option_list = option_list,
+    description = "Create MPAQT index from transcriptome and annotation"
+  )
+}
+
+make_prepare_sr_parser <- function() {
+  option_list <- list(
+    make_option("--fastq-r1", type = "character", default = NULL,
+                help = "Forward FASTQ file"),
+    make_option("--fastq-r2", type = "character", default = NULL,
+                help = "Reverse FASTQ file"),
+    make_option("--bus-file", type = "character", default = NULL,
+                help = "Pre-existing BUS file (alternative pathway)"),
+    make_option("--technology", type = "character", default = "bulk",
+                help = "Technology: bulk, 10xv2, 10xv3, 10xv4 [default: %default]"),
+    make_option("--whitelist", type = "character", default = NULL,
+                help = "Cell barcode whitelist for SC (optional)"),
+    make_option("--output-file", type = "character", default = NULL,
+                help = "Output RDS file path (overrides default naming)"),
+    make_option("--keep-bus", action = "store_true", default = FALSE,
+                help = "Keep intermediate kallisto/bustools files"),
+    make_option(c("-o", "--output-dir"), type = "character", default = ".",
+                help = "Output directory [default: %default]"),
+    make_option(c("-t", "--threads"), type = "integer", default = 1,
+                help = "Number of threads [default: %default]")
+  )
+  OptionParser(
+    usage = "mpaqt prepare-sr <index> [options]",
+    option_list = option_list,
+    description = "Convert FASTQ to equivalence class counts"
+  )
+}
+
+make_prepare_lr_parser <- function() {
+  option_list <- list(
+    make_option("--counts-file", type = "character", default = NULL,
+                help = "Pre-computed counts CSV/TSV"),
+    make_option("--flnc-fastq", type = "character", default = NULL,
+                help = "FLNC FASTQ file (minimap2 pathway)"),
+    make_option("--bam-file", type = "character", default = NULL,
+                help = "Aligned BAM file (Bambu pathway)"),
+    make_option("--genome", type = "character", default = NULL,
+                help = "Genome FASTA for FLNC pathway"),
+    make_option("--platform", type = "character", default = "PacBio",
+                help = "Sequencing platform: PacBio, ONT [default: %default]"),
+    make_option("--id-column", type = "character", default = "transcript_id",
+                help = "Column name for transcript IDs [default: %default]"),
+    make_option("--count-column", type = "character", default = "count",
+                help = "Column name for counts [default: %default]"),
+    make_option("--output-file", type = "character", default = NULL,
+                help = "Output RDS file path (overrides default naming)"),
+    make_option("--keep-bam", action = "store_true", default = FALSE,
+                help = "Keep minimap2 BAM alignment files"),
+    make_option("--keep-bambu-cache", action = "store_true", default = FALSE,
+                help = "Keep Bambu intermediate cache files"),
+    make_option(c("-o", "--output-dir"), type = "character", default = ".",
+                help = "Output directory [default: %default]"),
+    make_option(c("-t", "--threads"), type = "integer", default = 1,
+                help = "Number of threads [default: %default]")
+  )
+  OptionParser(
+    usage = "mpaqt prepare-lr <index> [options]",
+    option_list = option_list,
+    description = "Process long-read data to transcript counts"
+  )
+}
+
+make_quant_parser <- function() {
+  option_list <- list(
+    make_option("--lr-counts", type = "character", default = NULL,
+                help = "Long-read counts RDS file (optional)"),
+    make_option("--bias", type = "character", default = "none",
+                help = "Positional bias correction: 3p, 5p, none [default: %default]"),
+    make_option("--bins", type = "integer", default = 50,
+                help = "Number of bias bins [default: %default]"),
+    make_option("--max-iter", type = "integer", default = 100,
+                help = "Maximum EM iterations [default: %default]"),
+    make_option("--tolerance", type = "numeric", default = 1e-4,
+                help = "Convergence tolerance [default: %default]"),
+    make_option("--prior-start", type = "integer", default = 25,
+                help = "Iteration to start using prior [default: %default]"),
+    make_option("--convergence-start", type = "integer", default = 25,
+                help = "Iteration to start checking convergence [default: %default]"),
+    make_option("--compute-uncertainty", action = "store_true", default = FALSE,
+                help = "Compute standard errors for abundances"),
+    make_option(c("-o", "--output-dir"), type = "character", default = ".",
+                help = "Output directory [default: %default]")
+  )
+  OptionParser(
+    usage = "mpaqt quant <index> <sr_counts> [options]",
+    option_list = option_list,
+    description = "Run transcript quantification"
+  )
+}
+
+make_quant_sc_parser <- function() {
+  option_list <- list(
+    make_option("--clusters", type = "character", default = NULL,
+                help = "Cluster assignments CSV (required)"),
+    make_option("--lr-counts", type = "character", default = NULL,
+                help = "Long-read counts RDS file (optional)"),
+    make_option("--cluster-column", type = "character", default = "cluster",
+                help = "Column name for cluster IDs [default: %default]"),
+    make_option("--barcode-column", type = "character", default = "barcode",
+                help = "Column name for cell barcodes [default: %default]"),
+    make_option("--max-iter", type = "integer", default = 100,
+                help = "Maximum EM iterations [default: %default]"),
+    make_option("--tolerance", type = "numeric", default = 1e-4,
+                help = "Convergence tolerance [default: %default]"),
+    make_option(c("-o", "--output-dir"), type = "character", default = ".",
+                help = "Output directory [default: %default]")
+  )
+  OptionParser(
+    usage = "mpaqt quant-sc <index> <sr_counts> --clusters <file> [options]",
+    option_list = option_list,
+    description = "Run single-cell transcript quantification"
+  )
+}
+
+make_run_parser <- function() {
+  option_list <- list(
+    make_option("--fastq-r1", type = "character", default = NULL,
+                help = "Forward FASTQ file"),
+    make_option("--fastq-r2", type = "character", default = NULL,
+                help = "Reverse FASTQ file"),
+    make_option("--lr-counts-file", type = "character", default = NULL,
+                help = "Long-read counts file (optional)"),
+    make_option("--skip-lr", action = "store_true", default = FALSE,
+                help = "Skip long-read processing"),
+    make_option("--technology", type = "character", default = "bulk",
+                help = "Technology: bulk, 10xv2, 10xv3, 10xv4 [default: %default]"),
+    make_option("--bias", type = "character", default = "none",
+                help = "Positional bias correction: 3p, 5p, none [default: %default]"),
+    make_option("--bins", type = "integer", default = 50,
+                help = "Number of bias bins [default: %default]"),
+    make_option("--max-iter", type = "integer", default = 100,
+                help = "Maximum EM iterations [default: %default]"),
+    make_option(c("-o", "--output-dir"), type = "character", default = ".",
+                help = "Output directory [default: %default]"),
+    make_option(c("-t", "--threads"), type = "integer", default = 1,
+                help = "Number of threads [default: %default]")
+  )
+  OptionParser(
+    usage = "mpaqt run <index> --fastq-r1 <file> --fastq-r2 <file> [options]",
+    option_list = option_list,
+    description = "Full pipeline from FASTQ to quantification"
+  )
+}
+
+# ==============================================================================
+# Command handlers
+# ==============================================================================
+
+run_index <- function(args, positional) {
+  cli::cli_h1("MPAQT Index Creation")
+
+  idx <- mpaqt_index(
+    annotation = args$annotation,
+    transcriptome = args$transcriptome,
+    kallisto_index = args$`kallisto-index`,
+    store_sequences = args$`store-sequences`,
+    store_gtf = args$`store-gtf`,
+    threads = args$threads,
+    verbose = TRUE
+  )
+
+  # Save index (bundling is handled internally by mpaqt_index when store_sequences=TRUE)
+  saveRDS(idx, args$output)
+  cli::cli_alert_success("Index saved to: {.path {args$output}}")
+}
+
+run_prepare_sr <- function(args, positional) {
+  cli::cli_h1("MPAQT Short-Read Preparation")
+
+  if (length(positional) < 1) {
+    cli::cli_abort("Missing required argument: <index>")
+  }
+  index_file <- positional[1]
+  index <- mpaqt_read_index(index_file)
+
+  if (args$technology == "bulk") {
+    counts <- mpaqt_prepare_short_reads(
+      index = index,
+      fastq_1 = args$`fastq-r1`,
+      fastq_2 = args$`fastq-r2`,
+      bus_file = args$`bus-file`,
+      output_file = args$`output-file`,
+      keep_bus = args$`keep-bus`,
+      output_dir = args$`output-dir`,
+      threads = args$threads,
+      verbose = TRUE
+    )
+  } else {
+    counts <- mpaqt_prepare_short_reads_sc(
+      index = index,
+      fastq_1 = args$`fastq-r1`,
+      fastq_2 = args$`fastq-r2`,
+      technology = args$technology,
+      whitelist = args$whitelist,
+      keep_bus = args$`keep-bus`,
+      output_dir = args$`output-dir`,
+      threads = args$threads,
+      verbose = TRUE
+    )
+  }
+
+  cli::cli_alert_success("Short-read counts saved")
+}
+
+run_prepare_lr <- function(args, positional) {
+  cli::cli_h1("MPAQT Long-Read Preparation")
+
+  if (length(positional) < 1) {
+    cli::cli_abort("Missing required argument: <index>")
+  }
+  index_file <- positional[1]
+  index <- mpaqt_read_index(index_file)
+
+  # Determine minimap2 preset based on platform
+  minimap_preset <- switch(
+    args$platform,
+    "PacBio" = "splice:hq",
+    "ONT" = "splice",
+    "splice:hq"  # default
+  )
+
+  counts <- mpaqt_prepare_long_reads(
+    index = index,
+    bambu_counts = args$`counts-file`,
+    flnc_fastq = args$`flnc-fastq`,
+    genome = args$genome,
+    output_file = args$`output-file`,
+    keep_bam = args$`keep-bam`,
+    keep_bambu_cache = args$`keep-bambu-cache`,
+    output_dir = args$`output-dir`,
+    minimap_preset = minimap_preset,
+    threads = args$threads,
+    verbose = TRUE
+  )
+
+  cli::cli_alert_success("Long-read counts saved")
+}
+
+run_quant <- function(args, positional) {
+  cli::cli_h1("MPAQT Quantification")
+
+  if (length(positional) < 2) {
+    cli::cli_abort("Missing required arguments: <index> <sr_counts>")
+  }
+  index_file <- positional[1]
+  sr_counts_file <- positional[2]
+
+  index <- mpaqt_read_index(index_file)
+  sr_counts <- mpaqt_read_short_read_counts(sr_counts_file)
+  lr_counts <- if (!is.null(args$`lr-counts`)) mpaqt_read_long_read_counts(args$`lr-counts`) else NULL
+  bias <- if (args$bias != "none") args$bias else NULL
+
+  result <- mpaqt_quant(
+    index = index,
+    sr_counts = sr_counts,
+    lr_counts = lr_counts,
+    positional_bias = bias,
+    n_bins = args$bins,
+    max_iter = args$`max-iter`,
+    tolerance = args$tolerance,
+    compute_uncertainty = args$`compute-uncertainty`,
+    verbose = TRUE
+  )
+
+  dir.create(args$`output-dir`, recursive = TRUE, showWarnings = FALSE)
+  mpaqt_save_result(result, args$`output-dir`)
+  cli::cli_alert_success("Results saved to: {.path {args$`output-dir`}}")
+}
+
+run_quant_sc <- function(args, positional) {
+  cli::cli_h1("MPAQT Single-Cell Quantification")
+
+  if (length(positional) < 2) {
+    cli::cli_abort("Missing required arguments: <index> <sr_counts>")
+  }
+  if (is.null(args$clusters)) {
+    cli::cli_abort("Missing required option: --clusters")
+  }
+
+  index_file <- positional[1]
+  sr_counts_file <- positional[2]
+
+  index <- mpaqt_read_index(index_file)
+  sr_counts <- readRDS(sr_counts_file)
+  lr_counts <- if (!is.null(args$`lr-counts`)) mpaqt_read_long_read_counts(args$`lr-counts`) else NULL
+
+  # Read clusters
+  clusters <- data.table::fread(args$clusters)
+
+  results <- mpaqt_quant_sc(
+    index = index,
+    sr_counts_list = sr_counts,
+    lr_counts_list = lr_counts,
+    max_iter = args$`max-iter`,
+    verbose = TRUE
+  )
+
+  dir.create(args$`output-dir`, recursive = TRUE, showWarnings = FALSE)
+  mpaqt_save_result_sc(results, args$`output-dir`)
+  cli::cli_alert_success("Results saved to: {.path {args$`output-dir`}}")
+}
+
+run_pipeline <- function(args, positional) {
+  cli::cli_h1("MPAQT Full Pipeline")
+
+  if (length(positional) < 1) {
+    cli::cli_abort("Missing required argument: <index>")
+  }
+  if (is.null(args$`fastq-r1`) || is.null(args$`fastq-r2`)) {
+    cli::cli_abort("Missing required options: --fastq-r1 and --fastq-r2")
+  }
+
+  index_file <- positional[1]
+  index <- mpaqt_read_index(index_file)
+  output_dir <- args$`output-dir`
+  bias <- if (args$bias != "none") args$bias else NULL
+
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+  # Step 1: Prepare short reads
+  cli::cli_h2("Step 1: Short-Read Preparation")
+
+  if (args$technology == "bulk") {
+    sr_counts <- mpaqt_prepare_short_reads(
+      index = index,
+      fastq_1 = args$`fastq-r1`,
+      fastq_2 = args$`fastq-r2`,
+      output_dir = output_dir,
+      threads = args$threads,
+      verbose = TRUE
+    )
+  } else {
+    sr_counts <- mpaqt_prepare_short_reads_sc(
+      index = index,
+      fastq_1 = args$`fastq-r1`,
+      fastq_2 = args$`fastq-r2`,
+      technology = args$technology,
+      output_dir = output_dir,
+      threads = args$threads,
+      verbose = TRUE
+    )
+  }
+
+  # Step 2: Prepare long reads (optional)
+  lr_counts <- NULL
+  if (!args$`skip-lr` && !is.null(args$`lr-counts-file`)) {
+    cli::cli_h2("Step 2: Long-Read Preparation")
+    lr_counts <- mpaqt_prepare_long_reads(
+      index = index,
+      bambu_counts = args$`lr-counts-file`,
+      output_dir = output_dir,
+      verbose = TRUE
+    )
+  }
+
+  # Step 3: Quantification
+  cli::cli_h2("Step 3: Quantification")
+
+  result <- mpaqt_quant(
+    index = index,
+    sr_counts = sr_counts,
+    lr_counts = lr_counts,
+    positional_bias = bias,
+    n_bins = args$bins,
+    max_iter = args$`max-iter`,
+    verbose = TRUE
+  )
+
+  mpaqt_save_result(result, output_dir)
+  cli::cli_alert_success("Pipeline complete! Results saved to: {.path {output_dir}}")
+}
+
+# ==============================================================================
+# Command dispatch
+# ==============================================================================
+
+args <- commandArgs(trailingOnly = TRUE)
+
+if (length(args) == 0 || args[1] %in% c("-h", "--help")) {
+  cat(main_help)
+  quit(status = 0)
+}
+
+if (args[1] == "--version") {
+  cat("MPAQT 2.0.0\n")
+  quit(status = 0)
+}
+
+cmd <- args[1]
+cmd_args <- args[-1]
+
+tryCatch({
+  if (cmd == "index") {
+    parser <- make_index_parser()
+    parsed <- parse_args(parser, args = cmd_args, positional_arguments = TRUE)
+    run_index(parsed$options, parsed$args)
+  } else if (cmd == "prepare-sr") {
+    parser <- make_prepare_sr_parser()
+    parsed <- parse_args(parser, args = cmd_args, positional_arguments = TRUE)
+    run_prepare_sr(parsed$options, parsed$args)
+  } else if (cmd == "prepare-lr") {
+    parser <- make_prepare_lr_parser()
+    parsed <- parse_args(parser, args = cmd_args, positional_arguments = TRUE)
+    run_prepare_lr(parsed$options, parsed$args)
+  } else if (cmd == "quant") {
+    parser <- make_quant_parser()
+    parsed <- parse_args(parser, args = cmd_args, positional_arguments = TRUE)
+    run_quant(parsed$options, parsed$args)
+  } else if (cmd == "quant-sc") {
+    parser <- make_quant_sc_parser()
+    parsed <- parse_args(parser, args = cmd_args, positional_arguments = TRUE)
+    run_quant_sc(parsed$options, parsed$args)
+  } else if (cmd == "run") {
+    parser <- make_run_parser()
+    parsed <- parse_args(parser, args = cmd_args, positional_arguments = TRUE)
+    run_pipeline(parsed$options, parsed$args)
+  } else {
+    cli::cli_abort("Unknown command: {.val {cmd}}")
+  }
+}, error = function(e) {
+  cli::cli_alert_danger("Error: {e$message}")
+  quit(status = 1)
+})

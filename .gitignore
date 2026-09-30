@@ -1,0 +1,57 @@
+# R package build artifacts
+*.tar.gz
+*.Rcheck/
+*.Rproj.user/
+
+# R history and workspace
+.Rhistory
+.RData
+.Ruserdata
+
+# Compiled files
+*.o
+*.so
+*.dll
+
+# Documentation builds
+inst/doc/
+doc/
+docs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*~
+\#*\#
+
+# Test artifacts
+tests/testthat/_snaps/
+
+# Vignette cache
+vignettes/*.html
+vignettes/*.R
+
+# Container images
+*.sif
+inst/apptainer/*.sif
+inst/docker/*.tar
+
+# Build context artifacts
+inst/docker/mpaqt-source/
+inst/docker/environment.yml
+inst/apptainer/mpaqt-source/
+inst/apptainer/environment.yml
+
+# Release artifacts
+releases/
+!releases/.gitkeep
+
+# Release credentials and logs
+release-credentials.yml
+release.log

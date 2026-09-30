@@ -1,0 +1,83 @@
+Bootstrap: docker
+From: continuumio/miniconda3:latest
+
+%labels
+    Author Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi
+    Version 2.0.0
+    Variant dev
+    Description MPAQT Dev - with development, testing, and profiling tools
+    org.opencontainers.image.source https://github.com/csglab/mpaqt2
+
+%files
+    environment.yml /opt/environment.yml
+    mpaqt-source /opt/mpaqt-source
+
+%environment
+    export PATH=/opt/conda/envs/mpaqt-dev/bin:$PATH
+    export LC_ALL=C
+    export CONDA_DEFAULT_ENV=mpaqt-dev
+
+%post
+    # Install mamba for faster dependency resolution
+    /opt/conda/bin/conda install -n base -c conda-forge mamba -y
+
+    # Create environment from yml file
+    /opt/conda/bin/mamba env create -f /opt/environment.yml
+
+    # Install mpaqt R package
+    /opt/conda/envs/mpaqt-dev/bin/R CMD INSTALL /opt/mpaqt-source
+
+    # Copy CLI script to bin and make executable
+    cp /opt/mpaqt-source/inst/bin/mpaqt /opt/conda/envs/mpaqt-dev/bin/mpaqt
+    chmod +x /opt/conda/envs/mpaqt-dev/bin/mpaqt
+
+    # Clean up to reduce image size
+    /opt/conda/bin/conda clean --all -y
+    rm -rf /opt/conda/pkgs/*
+    rm -rf /root/.cache/*
+    rm -rf /opt/mpaqt-source
+    rm -f /opt/environment.yml
+
+    # Create working directory
+    mkdir -p /data
+
+%runscript
+    exec "$@"
+
+%test
+    echo "Testing MPAQT Dev container..."
+    R --version | head -1
+    kallisto version
+    bustools version
+    R --slave -e 'library(mpaqt); cat("MPAQT version:", as.character(packageVersion("mpaqt")), "\n")'
+    R --slave -e 'library(testthat); cat("testthat available\n")'
+    R --slave -e 'library(devtools); cat("devtools available\n")'
+    mpaqt --help | head -5
+    echo "All tests passed!"
+
+%help
+    MPAQT Dev - Multi-Platform Accurate Quantification of Transcripts
+
+    This image includes development tools:
+      - devtools, roxygen2, usethis (package development)
+      - testthat (testing)
+      - knitr, rmarkdown, pkgdown (documentation)
+      - lintr, styler (code quality)
+      - qpdf (PDF compression)
+
+    Usage:
+      apptainer run mpaqt-dev.sif R
+      apptainer run mpaqt-dev.sif mpaqt --help
+      apptainer exec mpaqt-dev.sif Rscript -e 'devtools::test()'
+      apptainer exec mpaqt-dev.sif Rscript -e 'devtools::check()'
+
+    CLI Commands:
+      mpaqt index      - Create index from transcriptome/annotation
+      mpaqt prepare-sr - Prepare short-read data
+      mpaqt prepare-lr - Prepare long-read data
+      mpaqt quant      - Run quantification (bulk)
+      mpaqt quant-sc   - Run quantification (single-cell)
+      mpaqt run        - Full pipeline
+
+    Authors: Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi
+    Documentation: https://csglab.github.io/mpaqt2/

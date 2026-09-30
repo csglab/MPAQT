@@ -1,0 +1,27 @@
+# Development files
+^VERSION$
+^release\.sh$
+
+# R package development
+^\.Rproj\.user$
+^.*\.Rproj$
+^LICENSE\.md$
+
+# CI/CD
+^\.github$
+
+# Documentation
+^docs$
+^pkgdown$
+^_pkgdown\.yml$
+
+# Other
+^\.gitignore$
+
+# Release artifacts
+^releases$
+
+# Container build files (not needed in R package)
+^inst/docker$
+^inst/apptainer$
+^inst/conda-recipe$

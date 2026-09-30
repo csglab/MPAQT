@@ -1,0 +1,108 @@
+url: https://csglab.github.io/mpaqt2/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+
+home:
+  title: MPAQT - Multi-Platform Accurate Quantification of Transcripts
+  strip_header: true
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, github]
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: Get Started
+          href: articles/mpaqt.html
+        - text: Installation
+          href: articles/installation.html
+        - text: "---"
+        - text: Workflows
+        - text: Bulk RNA-seq
+          href: articles/bulk-workflow.html
+        - text: Single-Cell
+          href: articles/single-cell-workflow.html
+        - text: "---"
+        - text: Reference
+        - text: CLI Reference
+          href: articles/cli-reference.html
+        - text: Quantification Methods
+          href: articles/quantification-methods.html
+        - text: Package Structure
+          href: articles/package-structure.html
+
+reference:
+  - title: Main Functions
+    eisc: Primary user-facing functions
+    contents:
+      - mpaqt_index
+      - mpaqt_prepare_short_reads
+      - mpaqt_prepare_short_reads_sc
+      - mpaqt_prepare_long_reads
+      - mpaqt_prepare_long_reads_sc
+      - mpaqt_prepare_long_reads_sc_flnc
+      - mpaqt_quant
+      - mpaqt_quant_bulk
+      - mpaqt_quant_sc
+      - mpaqt_prequant
+      - mpaqt_postquant
+  - title: Results
+    desc: Working with quantification results
+    contents:
+      - tpm
+      - abundances
+      - gene_abundances
+      - uncertainty
+      - has_uncertainty
+      - export_results_csv
+      - export_combined_results
+      - combine_quant_results
+      - get_parameters
+      - get_input_metadata
+  - title: I/O Functions
+    desc: Reading and writing data
+    contents:
+      - mpaqt_read_index
+      - mpaqt_read_counts
+      - mpaqt_read_result
+      - mpaqt_read_short_read_counts
+      - mpaqt_read_long_read_counts
+      - mpaqt_read_prequant
+      - mpaqt_save_result
+      - mpaqt_save_result_sc
+      - mpaqt_save_prequant
+  - title: Processing Functions
+    desc: Low-level read processing
+    contents:
+      - mpaqt_process_short_reads
+      - mpaqt_process_short_reads_sc
+      - mpaqt_process_long_reads
+      - mpaqt_process_long_reads_sc
+  - title: Dependency Checks
+    desc: Check for optional dependencies
+    contents:
+      - require_long_read_processing
+      - require_sc_long_read_flnc
+      - require_transcriptome_extraction
+  - title: S3 Methods
+    desc: Print, summary, and accessor methods
+    contents:
+      - coef.mpaqt_quant_result
+      - fitted.mpaqt_quant_result
+      - print.mpaqt_counts_lr
+      - print.mpaqt_counts_sr
+      - print.mpaqt_index
+      - print.mpaqt_prequant
+      - print.mpaqt_quant_result
+      - summary.mpaqt_counts_lr
+      - summary.mpaqt_counts_sr
+      - summary.mpaqt_index
+      - summary.mpaqt_quant_result
+      - length.mpaqt_counts
+      - length.mpaqt_index
+      - "[.mpaqt_counts"
+      - "[.mpaqt_index"

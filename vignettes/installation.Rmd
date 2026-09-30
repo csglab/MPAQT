@@ -1,0 +1,462 @@
+---
+title: "Installation Guide"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Installation Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This guide covers installing MPAQT and all its dependencies. MPAQT has both R package dependencies and external system tools that must be installed separately.
+
+## Prerequisites
+
+**R Installation:**
+
+MPAQT requires R (>= 4.0.0) and system libraries for compiling R packages:
+
+```bash
+# Install R and compilation dependencies via conda (recommended)
+conda install -c conda-forge r-base cmake icu zlib
+```
+
+Or install R from [CRAN](https://cran.r-project.org/) and ensure `cmake`, `icu`, and `zlib` are available on your system.
+
+---
+
+## Quick Install with pak (Recommended)
+
+[pak](https://pak.r-lib.org/) is a modern R package manager that handles dependencies efficiently and supports installing from GitHub.
+
+```r
+# Install pak if not already installed
+install.packages("pak")
+
+# Install MPAQT from GitHub
+pak::pak("csglab/mpaqt2")
+```
+
+pak will automatically:
+
+- Install all required R package dependencies from CRAN
+- Prompt you to install Bioconductor packages if needed
+- Handle version conflicts gracefully
+
+## Alternative: devtools Installation
+
+If you prefer using devtools:
+
+```r
+# Install devtools if needed
+install.packages("devtools")
+
+# Install MPAQT from GitHub
+devtools::install_github("csglab/mpaqt2")
+```
+
+## Installing from Local Source
+
+If you have the package source code locally:
+
+```r
+# Using pak
+pak::pak("local::/path/to/mpaqt")
+
+# Or using devtools
+devtools::install_local("/path/to/mpaqt")
+```
+
+---
+
+## R Package Dependencies
+
+### Required Packages (Automatically Installed)
+
+These packages are installed automatically when you install MPAQT:
+
+| Package | Purpose |
+|---------|---------|
+| `data.table` | Fast data manipulation |
+| `Matrix` | Sparse matrix operations |
+| `lme4` | Mixed-effects models |
+| `gpboost` | Gradient boosting with random effects |
+| `cli` | Terminal output formatting |
+| `rlang` | Error handling and metaprogramming |
+| `stringr` | String manipulation |
+| `purrr` | Functional programming |
+| `optparse` | Command-line argument parsing |
+
+### Optional Bioconductor Packages
+
+These packages are needed for specific features:
+
+#### For Transcriptome Extraction (Index Creation from Genome)
+
+If you want to create an index from a genome FASTA instead of a transcriptome FASTA:
+
+```r
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install(c(
+    "Biostrings",
+    "rtracklayer",
+    "GenomicRanges",
+    "IRanges",
+    "BSgenome"
+))
+```
+
+#### For Long-Read Processing (FLNC Pathway)
+
+If you want to process raw FLNC FASTQ files through the minimap2/Bambu pipeline:
+
+```r
+BiocManager::install(c(
+    "bambu",
+    "BiocFileCache",
+    "SummarizedExperiment"
+))
+```
+
+**Note:** If you're using pre-computed Bambu counts (CSV files), you don't need these packages.
+
+---
+
+## System Tool Dependencies
+
+MPAQT uses external bioinformatics tools for read processing.
+
+### Required Tools
+
+These are required for short-read processing:
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| **kallisto** | >= 0.50.1 | Short-read pseudoalignment |
+| **bustools** | >= 0.43.1 | BUS file processing |
+
+### Optional Tools
+
+These are only needed for specific long-read workflows:
+
+| Tool | Purpose | When Needed |
+|------|---------|-------------|
+| **minimap2** | Long-read alignment | FLNC FASTQ processing |
+| **samtools** | BAM file handling | With minimap2 |
+
+### Installing via Conda (Recommended)
+
+The easiest way to install system tools is using conda:
+
+```bash
+# Create a new environment (optional but recommended)
+conda create -n mpaqt python=3.10
+
+# Activate the environment
+conda activate mpaqt
+
+# Install required tools
+conda install -c bioconda kallisto bustools
+
+# Install optional tools (for long-read processing)
+conda install -c bioconda minimap2 samtools
+```
+
+### Installing via Mamba (Faster)
+
+If you have mamba installed:
+
+```bash
+mamba install -c bioconda kallisto bustools minimap2 samtools
+```
+
+### Manual Installation
+
+If you prefer not to use conda:
+
+**kallisto**: Download from [pachterlab/kallisto](https://github.com/pachterlab/kallisto/releases)
+
+**bustools**: Download from [BUStools/bustools](https://github.com/BUStools/bustools/releases)
+
+**minimap2**: Download from [lh3/minimap2](https://github.com/lh3/minimap2/releases)
+
+**samtools**: Download from [samtools/samtools](https://github.com/samtools/samtools/releases)
+
+Ensure all tools are available in your `PATH`.
+
+---
+
+## Pre-built Containers and Packages
+
+Instead of installing manually, you can use pre-built containers or conda packages that include MPAQT and all dependencies.
+
+### Available Variants
+
+| Variant | Tag/Package | Description | Use When |
+|---------|-------------|-------------|----------|
+| **stable** | `2.0.0` / `r-mpaqt` | Core dependencies only (kallisto, bustools) | Standard short-read workflows |
+| **full** | `2.0.0-full` / `r-mpaqt-full` | Includes minimap2, samtools, Bioconductor (bambu, Biostrings, etc.) | Long-read FLNC processing, transcriptome extraction |
+| **dev** | `2.0.0-dev` / `r-mpaqt-dev` | Includes devtools, testthat, pkgdown | Development and testing |
+
+### Docker
+
+```bash
+# Stable (recommended for most users)
+docker pull csglab/mpaqt:2.0.0
+docker run -it -v $(pwd):/data csglab/mpaqt:2.0.0
+
+# Full (with all optional dependencies)
+docker pull csglab/mpaqt:2.0.0-full
+docker run -it -v $(pwd):/data csglab/mpaqt:2.0.0-full
+
+# Development
+docker pull csglab/mpaqt:2.0.0-dev
+```
+
+### Apptainer (for HPC)
+
+```bash
+# Stable
+apptainer pull library://csglab/mpaqt:2.0.0
+apptainer exec mpaqt_2.0.0.sif Rscript analysis.R
+
+# Full
+apptainer pull library://csglab/mpaqt:2.0.0-full
+apptainer exec mpaqt_2.0.0-full.sif Rscript analysis.R
+
+# Development
+apptainer pull library://csglab/mpaqt:2.0.0-dev
+```
+
+### Conda
+
+```bash
+# Stable
+conda install -c csglab -c conda-forge -c bioconda r-mpaqt
+
+# Full (includes minimap2, samtools, Bioconductor packages)
+conda install -c csglab -c conda-forge -c bioconda r-mpaqt-full
+
+# Development (includes devtools, testthat, etc.)
+conda install -c csglab -c conda-forge -c bioconda r-mpaqt-dev
+```
+
+### Which Variant Should I Use?
+
+- **stable**: You only need short-read quantification, or you're providing pre-computed long-read counts
+- **full**: You need to process raw FLNC FASTQ files, or create indexes from genome FASTA files
+- **dev**: You're contributing to MPAQT or running the test suite
+
+---
+
+## Verifying Installation
+
+### Check R Package
+
+```r
+# Load the package
+library(mpaqt)
+
+# Check version
+packageVersion("mpaqt")
+```
+
+### Check System Tools
+
+From R:
+
+```r
+library(mpaqt)
+
+# Check kallisto
+get_tool_version("kallisto")
+
+# Check bustools
+get_tool_version("bustools")
+
+# Check optional tools
+get_tool_version("minimap2")
+get_tool_version("samtools")
+```
+From the command line:
+
+```bash
+kallisto version
+bustools version
+minimap2 --version
+samtools --version
+```
+
+### Test Basic Functionality
+
+```r
+# This should work if all required dependencies are installed
+library(mpaqt)
+
+# Check that key functions are available
+?mpaqt_index
+?mpaqt_quant
+```
+
+---
+
+## Troubleshooting
+
+### "Package 'X' is not available"
+
+If pak/devtools fails to find a package, try installing it separately:
+
+```r
+# For CRAN packages
+install.packages("package_name")
+
+# For Bioconductor packages
+BiocManager::install("package_name")
+```
+
+### "kallisto not found" / "bustools not found"
+
+Ensure the tools are installed and in your PATH:
+
+```bash
+# Check if tools are found
+which kallisto
+which bustools
+
+# If using conda, ensure environment is activated
+conda activate mpaqt
+```
+
+### Bioconductor Version Conflicts
+
+If you encounter version conflicts with Bioconductor packages:
+
+```r
+# Update Bioconductor
+BiocManager::install(version = "3.18")  # Use latest stable version
+
+# Then reinstall MPAQT
+pak::pak("csglab/mpaqt2")
+```
+
+### gpboost Installation Issues
+
+gpboost can sometimes be tricky to install. If you encounter issues:
+
+```r
+# Try installing from CRAN first
+install.packages("gpboost")
+
+# If that fails, you might need system dependencies
+# On Ubuntu/Debian:
+# sudo apt-get install cmake libboost-all-dev
+
+# On macOS with Homebrew:
+# brew install cmake boost
+```
+
+### Memory Issues During Installation
+
+If installation runs out of memory:
+
+```r
+# Increase the number of connections
+options(Ncpus = 1)
+
+# Or install packages one at a time
+install.packages("data.table")
+install.packages("Matrix")
+# etc.
+```
+
+---
+
+## Summary: What You Need
+
+### Minimal Setup (Short-Read Only)
+
+```r
+# R packages
+pak::pak("csglab/mpaqt2")
+```
+
+```bash
+# System tools
+conda install -c bioconda kallisto bustools
+```
+
+### Full Setup (With Long-Read Processing)
+
+```r
+# R packages
+pak::pak("csglab/mpaqt2")
+BiocManager::install(c("Biostrings", "rtracklayer", "bambu", "BSgenome"))
+```
+
+```bash
+# System tools
+conda install -c bioconda kallisto bustools minimap2 samtools
+```
+
+---
+
+## Verification Checklist
+
+Run this complete checklist to verify your MPAQT installation:
+```r
+# 1. Load MPAQT and check version
+library(mpaqt)
+cat("MPAQT version:", as.character(packageVersion("mpaqt")), "\n")
+
+# 2. Check required system tools
+cat("\nRequired tools:\n")
+check_kallisto()
+check_bustools()
+
+# 3. Check optional tools (only needed for FLNC processing)
+cat("\nOptional tools:\n")
+tryCatch(check_minimap2(), error = function(e) message("minimap2: not found (optional)"))
+tryCatch(check_samtools(), error = function(e) message("samtools: not found (optional)"))
+
+# 4. Check optional Bioconductor packages
+cat("\nOptional packages:\n")
+cat("Biostrings:", requireNamespace("Biostrings", quietly = TRUE), "\n")
+cat("rtracklayer:", requireNamespace("rtracklayer", quietly = TRUE), "\n")
+cat("bambu:", requireNamespace("bambu", quietly = TRUE), "\n")
+```
+
+**Expected output for minimal setup:**
+```
+MPAQT version: 0.x.x
+
+Required tools:
+✓ kallisto (0.50.1)
+✓ bustools (0.43.2)
+
+Optional tools:
+minimap2: not found (optional)
+samtools: not found (optional)
+
+Optional packages:
+Biostrings: FALSE
+rtracklayer: FALSE
+bambu: FALSE
+```
+
+---
+
+## Next Steps
+
+After installation:
+
+- Read the [Get Started guide](mpaqt.html) for an overview
+- Follow the [Bulk Workflow](bulk-workflow.html) for your first analysis
+- Check the [CLI Reference](cli-reference.html) if you prefer command-line usage

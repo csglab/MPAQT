@@ -1,0 +1,84 @@
+package:
+  name: r-mpaqt-full
+  version: "2.0.0"
+
+source:
+  git_url: https://github.com/csglab/mpaqt2.git
+  git_rev: main
+
+build:
+  number: 0
+  noarch: generic
+  script: R CMD INSTALL --build .
+
+requirements:
+  host:
+    - r-base >=4.0.0
+    - r-data.table >=1.14.0
+    - r-matrix
+    - r-lme4
+    - r-gpboost
+    - r-cli >=3.0.0
+    - r-rlang >=1.0.0
+    - r-stringr
+    - r-purrr
+    - r-optparse
+  run:
+    - r-base >=4.0.0
+    - r-data.table >=1.14.0
+    - r-matrix
+    - r-lme4
+    - r-gpboost
+    - r-cli >=3.0.0
+    - r-rlang >=1.0.0
+    - r-stringr
+    - r-purrr
+    - r-optparse
+    # Required tools
+    - kallisto >=0.50.1
+    - bustools >=0.43.1
+    # Optional tools for long-read processing
+    - minimap2
+    - samtools
+    # Bioconductor for long-read FLNC processing
+    - bioconductor-bambu
+    - bioconductor-biocfilecache
+    - bioconductor-summarizedexperiment
+    # Bioconductor for transcriptome extraction
+    - bioconductor-biostrings
+    - bioconductor-rtracklayer
+    - bioconductor-genomicranges
+    - bioconductor-iranges
+    - bioconductor-bsgenome
+
+test:
+  commands:
+    - R -e "library(mpaqt)"
+    - kallisto version
+    - bustools version
+    - minimap2 --version
+    - samtools --version
+    - R -e "library(bambu)"
+
+about:
+  home: https://github.com/csglab/mpaqt2
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: Multi-Platform Accurate Quantification of Transcripts (Full)
+  description: |
+    MPAQT is an R package for RNA-seq transcript quantification that
+    integrates short-read and long-read sequencing data for improved accuracy.
+    This full version includes all optional dependencies for long-read FLNC
+    processing (minimap2, samtools, bambu) and transcriptome extraction.
+  doc_url: https://csglab.github.io/mpaqt2/
+  dev_url: https://github.com/csglab/mpaqt2
+
+extra:
+  recipe-maintainers:
+    - saberiato
+  authors:
+    - Ali Saberi
+    - Michael Apostolides
+    - Jichen Wang
+    - Hamed S. Najafabadi

@@ -1,0 +1,582 @@
+---
+title: "Single-Cell RNA-seq Workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Single-Cell RNA-seq Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This article documents the MPAQT workflow for single-cell RNA-seq transcript quantification. The single-cell workflow is designed for cluster-level quantification, aggregating cells by cluster assignments.
+
+## Overview
+
+Single-cell RNA-seq presents unique challenges for transcript-level quantification:
+
+- **Sparse data**: Individual cells have limited coverage
+- **Technical noise**: High dropout rates and amplification bias
+- **Cell heterogeneity**: Different cell types express different isoforms
+
+MPAQT addresses these challenges by:
+
+1. **Cluster aggregation**: Pooling reads from cells in the same cluster
+2. **Shared bias correction**: Learning positional bias from combined data
+3. **Per-cluster quantification**: Running EM algorithm per cluster
+
+```
+SINGLE-CELL WORKFLOW
+====================
+
+┌─────────────────────┐     ┌─────────────────────┐
+│     FASTQ Files     │     │  Cluster Assignments│
+│  (10x Chromium)     │     │   (barcode→cluster) │
+└──────────┬──────────┘     └──────────┬──────────┘
+           │                           │
+           └─────────────┬─────────────┘
+                         ▼
+           ┌─────────────────────────┐
+           │ mpaqt_prepare_short_    │
+           │      reads_sc()         │
+           │                         │
+           │ Groups reads by cluster │
+           └─────────────┬───────────┘
+                         │
+                         ▼
+           ┌─────────────────────────┐
+           │    mpaqt_quant_sc()     │
+           │                         │
+           │ Quantifies each cluster │
+           │ independently           │
+           └─────────────┬───────────┘
+                         │
+                         ▼
+           ┌─────────────────────────┐
+           │  Per-cluster TPM +      │
+           │  Combined matrix        │
+           └─────────────────────────┘
+```
+
+---
+
+## Progressive Workflow Examples
+
+This section demonstrates MPAQT single-cell capabilities through progressively complex examples. Each level shows **CLI first (where applicable), then R API**.
+
+### Level 1: Short-Read Only
+
+The simplest single-cell MPAQT workflow processes 10x Chromium data by cluster.
+
+#### Using CLI
+
+```bash
+# Process 10x Chromium v3 data
+mpaqt prepare-sr my_index.rds \
+  --fastq-r1 sample_R1.fastq.gz \
+  --fastq-r2 sample_R2.fastq.gz \
+  --technology 10xv3 \
+  --output-dir results/ \
+  --threads 8
+
+# Quantify by cluster
+mpaqt quant-sc my_index.rds results/mpaqt.sr.rds \
+  --clusters clusters.csv \
+  --output-dir results/
+```
+
+#### Using R API
+
+```{r sc-level1, eval=FALSE}
+library(mpaqt)
+
+# Load or create index (same as bulk)
+index <- mpaqt_read_index("my_index.rds")
+
+# Process single-cell short reads by cluster
+sr_list <- mpaqt_prepare_short_reads_sc(
+  index = index,
+  fastq_1 = "sample_R1.fastq.gz",
+  fastq_2 = "sample_R2.fastq.gz",
+  clusters_file = "clusters.csv",
+  technology = "10xv3",
+  output_dir = "results/",
+  threads = 8
+)
+
+# Quantify all clusters
+results <- mpaqt_quant_sc(
+  index = index,
+  sr_counts_list = sr_list
+)
+
+# Get combined TPM matrix (transcripts × clusters)
+tpm_matrix <- combine_quant_results(results)
+```
+
+---
+
+### Level 2: Adding Positional Bias Correction
+
+In single-cell quantification, positional bias correction uses the combined "all_clusters" data for robust weight estimation, then applies these weights to each cluster.
+
+#### Using R API
+
+```{r sc-level2, eval=FALSE}
+results <- mpaqt_quant_sc(
+  index = index,
+  sr_counts_list = sr_list,
+  positional_bias = "3p",
+  n_bins = 50
+)
+```
+
+> **Note:** Bias weights are learned from pooled data across all clusters, then applied per-cluster. This provides more robust estimation than learning bias separately per cluster.
+
+---
+
+### Level 3: With Long-Read Integration (Advanced)
+
+If you have matching single-cell long-read data (e.g., MAS-ISO-seq), you can integrate it for improved accuracy.
+
+#### Using R API
+
+```{r sc-level3, eval=FALSE}
+# Prepare SC long-read counts (cluster-level)
+lr_list <- mpaqt_prepare_long_reads_sc(
+  index = index,
+  counts_file = "lr_counts_by_cluster.csv",
+  clusters_file = "clusters.csv",
+  output_dir = "results/"
+)
+
+# Quantify with both data types
+results <- mpaqt_quant_sc(
+  index = index,
+  sr_counts_list = sr_list,
+  lr_counts_list = lr_list,
+  positional_bias = "3p"
+)
+
+# Save results
+mpaqt_save_result_sc(results, "results/")
+```
+
+> **Note:** Single-cell long-read integration is less common than bulk. If you don't have cluster-level long-read data, use Level 1 or 2.
+
+---
+
+## Detailed Reference
+
+The following sections provide comprehensive documentation for each stage.
+
+---
+
+## Stage 1: Index Creation
+
+The index creation process is identical to bulk RNA-seq. See the [Bulk Workflow](bulk-workflow.html) for details.
+
+```r
+library(mpaqt)
+
+# Create index (same as bulk)
+index <- mpaqt_index(
+  annotation = "reference/gencode.v44.annotation.gtf",
+  transcriptome = "reference/gencode.v44.transcripts.fa",
+  output_file = "reference/mpaqt.index.rds",
+  read_length = 91,  # Typical 10x read length
+  threads = 8
+)
+```
+
+---
+
+## Stage 2: Single-Cell Short-Read Processing
+
+### Input Requirements
+
+1. **FASTQ files**: 10x Chromium output (R1 contains barcode+UMI, R2 contains cDNA)
+2. **Cluster file**: CSV mapping barcodes to cluster assignments
+
+#### Cluster File Format
+
+```
+barcode,cluster
+AAACCTGAGAAACCAT-1,1
+AAACCTGAGAAACCGC-1,1
+AAACCTGAGAAACCTA-1,2
+AAACCTGAGAAACGAG-1,3
+...
+```
+
+### Input Pathways
+
+```
+SINGLE-CELL SHORT-READ PATHWAYS
+===============================
+
+Pathway A: Raw FASTQ + Clusters (Full pipeline)
+───────────────────────────────────────────────
+  mpaqt_prepare_short_reads_sc(
+      index         = index,
+      fastq_1       = "sample_R1.fastq.gz",  # Barcode+UMI
+      fastq_2       = "sample_R2.fastq.gz",  # cDNA
+      clusters_file = "clusters.csv",
+      technology    = "10xv3"
+  )
+
+Pathway B: Pre-computed BUS + EC + Clusters
+───────────────────────────────────────────
+  mpaqt_prepare_short_reads_sc(
+      index         = index,
+      bus_file      = "kallisto_out/output.bus",
+      ec_file       = "kallisto_out/matrix.ec",
+      clusters_file = "clusters.csv"
+  )
+
+Pathway C: Pre-computed Cluster RDS Files
+─────────────────────────────────────────
+  mpaqt_prepare_short_reads_sc(
+      index   = index,
+      rds_dir = "previous_run/clusters/"
+  )
+```
+
+### Function Reference: `mpaqt_prepare_short_reads_sc()`
+
+```r
+mpaqt_prepare_short_reads_sc(
+  index,                  # mpaqt_index object
+  fastq_1 = NULL,         # Read 1 FASTQ (barcode + UMI)
+  fastq_2 = NULL,         # Read 2 FASTQ (cDNA)
+  clusters_file = NULL,   # Barcode to cluster mapping
+  bus_file = NULL,        # Pre-computed BUS file
+  ec_file = NULL,         # Pre-computed EC file
+  rds_dir = NULL,         # Directory with cluster RDS files
+  output_dir = tempdir(),
+  technology = "10xv3",   # 10xv2, 10xv3, or 10xv4
+  threads = 1L,
+  verbose = TRUE
+)
+```
+
+### Supported Technologies
+
+| Technology | Barcode | UMI | Description |
+|------------|---------|-----|-------------|
+| `10xv2` | 16 bp | 10 bp | 10x Chromium v2 |
+| `10xv3` | 16 bp | 12 bp | 10x Chromium v3 |
+| `10xv4` | 16 bp | 12 bp | 10x Chromium v4 |
+
+### Example: Process Single-Cell Short Reads
+
+```r
+# From 10x Chromium FASTQ files
+sr_list <- mpaqt_prepare_short_reads_sc(
+  index = index,
+  fastq_1 = "data/sample_R1.fastq.gz",
+  fastq_2 = "data/sample_R2.fastq.gz",
+  clusters_file = "data/clusters.csv",
+  technology = "10xv3",
+  output_dir = "results/",
+  threads = 8
+)
+
+# Returns named list of mpaqt_counts_sr objects
+names(sr_list)
+# [1] "1" "2" "3" "4" "5" "all_clusters"
+
+# "all_clusters" contains combined counts for bias estimation
+print(sr_list[["1"]])
+# mpaqt_counts_sr object (cluster: 1)
+#   Equivalence classes: 234,567
+#   Total counts: 3,456,789
+#   Cells in cluster: 1,234
+```
+
+### Output Structure
+
+The function returns a named list where:
+
+- Each cluster ID maps to an `mpaqt_counts_sr` object
+- A special `"all_clusters"` entry contains combined counts
+
+Files saved to `output_dir`:
+```
+results/
+├── cluster_1.short_read.rds
+├── cluster_2.short_read.rds
+├── cluster_3.short_read.rds
+├── ...
+└── all_clusters.short_read.rds
+```
+
+---
+
+## Stage 3: Single-Cell Long-Read Processing (Optional)
+
+Long-read single-cell sequencing (e.g., MAS-ISO-seq) can provide isoform information. Due to lower throughput, long-read data is typically aggregated at the cluster level.
+
+### Function Reference: `mpaqt_prepare_long_reads_sc()`
+
+```r
+mpaqt_prepare_long_reads_sc(
+  index,                  # mpaqt_index object
+  count_file = NULL,      # Transcript x barcode count matrix
+  clusters_file = NULL,   # Barcode to cluster mapping
+  rds_dir = NULL,         # Directory with cluster RDS files
+  output_dir = tempdir(),
+  verbose = TRUE
+)
+```
+
+### Example: Process Single-Cell Long Reads
+
+```r
+# From count matrix + cluster assignments
+lr_list <- mpaqt_prepare_long_reads_sc(
+  index = index,
+  count_file = "data/lr_counts_matrix.csv",
+  clusters_file = "data/clusters.csv",
+  output_dir = "results/"
+)
+
+# Returns named list of mpaqt_counts_lr objects
+names(lr_list)
+# [1] "1" "2" "3" "4" "5"
+```
+
+### Count File Format
+
+The long-read count file should have transcript IDs as the first column and barcodes as column headers:
+
+```
+transcript_id,AAACCTGAGAAACCAT-1,AAACCTGAGAAACCGC-1,AAACCTGAGAAACCTA-1
+ENST00000456328.2,5,0,2
+ENST00000450305.2,12,8,0
+ENST00000488147.1,0,3,1
+...
+```
+
+---
+
+## Stage 4: Single-Cell Quantification
+
+The `mpaqt_quant_sc()` function processes all clusters efficiently:
+
+1. **Shared pre-quantification**: Bias weights estimated from combined data
+2. **Per-cluster EM**: Each cluster quantified independently
+3. **Combined output**: TPM matrix across all clusters
+
+### Function Reference: `mpaqt_quant_sc()`
+
+```r
+mpaqt_quant_sc(
+  index,                      # mpaqt_index object
+  sr_counts_list,             # Named list of mpaqt_counts_sr
+  lr_counts_list = NULL,      # Named list of mpaqt_counts_lr
+  positional_bias = NULL,     # "3p", "5p", or NULL
+  n_bins = 50L,
+  prior_model = NULL,
+  max_iter = 100L,
+  tolerance = 1e-4,
+  prior_start = 25L,
+  convergence_start = 25L,
+  verbose = TRUE
+)
+```
+
+### Example: Quantify All Clusters
+
+```r
+# Quantify all clusters
+results <- mpaqt_quant_sc(
+  index = index,
+  sr_counts_list = sr_list,
+  lr_counts_list = lr_list,        # Optional
+  positional_bias = "3p",          # Shared bias correction
+  max_iter = 100,
+  verbose = TRUE
+)
+
+# Returns named list of mpaqt_quant_result objects
+names(results)
+# [1] "1" "2" "3" "4" "5" "all_clusters"
+
+# Access individual cluster results
+cluster1_tpm <- tpm(results[["1"]])
+```
+
+### Shared vs Per-Cluster Processing
+
+Bias correction (`positional_bias`) uses the combined `"all_clusters"` data for more robust weight estimation. The weights are then applied to each cluster's EM algorithm.
+
+```r
+# Under the hood, mpaqt_quant_sc does:
+
+# 1. Pre-quantification on combined data
+prequant <- mpaqt_prequant(
+  index = index,
+  sr_counts = sr_list[["all_clusters"]],
+  positional_bias = "3p"
+)
+
+# 2. Apply to each cluster
+for (cluster in names(sr_list)) {
+  result <- mpaqt_postquant(
+    index = index,
+    sr_counts = sr_list[[cluster]],
+    prequant = prequant  # Shared weights
+  )
+}
+```
+
+---
+
+## Stage 5: Saving Results
+
+### Save All Cluster Results
+
+```r
+# Save individual cluster results + combined matrix
+mpaqt_save_result_sc(
+  results = results,
+  output_dir = "results/",
+  prefix = "sample"
+)
+
+# Creates:
+#   results/sample.1.quant.rds
+#   results/sample.1.quant.csv
+#   results/sample.2.quant.rds
+#   results/sample.2.quant.csv
+#   ...
+#   results/sample.combined.csv  # TPM matrix
+```
+
+### Extract Combined TPM Matrix
+
+```r
+# Create TPM matrix: transcripts x clusters
+combined_tpm <- combine_quant_results(results)
+
+head(combined_tpm)
+#            transcript_id        1        2        3
+# 1: ENST00000456328.2 0.123456 0.234567 0.345678
+# 2: ENST00000450305.2 2.345678 1.234567 3.456789
+# 3: ENST00000488147.1 0.000000 0.012345 0.000000
+```
+
+---
+
+## Complete Example Workflow
+
+### Using CLI
+
+```bash
+#!/bin/bash
+# Complete single-cell MPAQT workflow
+
+# Stage 1: Create index (run once per reference)
+mpaqt index \
+  --transcriptome reference/gencode.v44.transcripts.fa \
+  --annotation reference/gencode.v44.annotation.gtf \
+  --output reference/mpaqt.index.rds \
+  --read-length 91 \
+  --threads 8
+
+# Stage 2: Process single-cell short reads
+mpaqt prepare-sr reference/mpaqt.index.rds \
+  --fastq-r1 data/sample_R1.fastq.gz \
+  --fastq-r2 data/sample_R2.fastq.gz \
+  --technology 10xv3 \
+  --output-dir results/ \
+  --threads 8
+
+# Stage 3: Quantify by cluster
+mpaqt quant-sc reference/mpaqt.index.rds results/mpaqt.sr.rds \
+  --clusters analysis/clusters.csv \
+  --bias 3p \
+  --output-dir results/
+
+# Output files:
+#   results/cluster_*.quant.rds   - Per-cluster results
+#   results/combined.quant.csv    - TPM matrix (transcripts x clusters)
+```
+
+### Using R API
+
+```r
+library(mpaqt)
+
+#===============================================================================
+# STAGE 1: Index (create once, reuse)
+#===============================================================================
+
+index <- mpaqt_index(
+  annotation = "reference/gencode.v44.annotation.gtf",
+  transcriptome = "reference/gencode.v44.transcripts.fa",
+  output_file = "reference/mpaqt.index.rds",
+  read_length = 91,
+  threads = 8
+)
+
+#===============================================================================
+# STAGE 2: Process Single-Cell Short Reads
+#===============================================================================
+
+# Load cluster assignments from Seurat/scanpy analysis
+# clusters.csv: barcode,cluster
+
+sr_list <- mpaqt_prepare_short_reads_sc(
+  index = index,
+  fastq_1 = "data/sample_R1.fastq.gz",
+  fastq_2 = "data/sample_R2.fastq.gz",
+  clusters_file = "analysis/clusters.csv",
+  technology = "10xv3",
+  output_dir = "results/",
+  threads = 8
+)
+
+#===============================================================================
+# STAGE 3: Process Long Reads (Optional)
+#===============================================================================
+
+# If you have single-cell long-read data (e.g., MAS-ISO-seq)
+lr_list <- mpaqt_prepare_long_reads_sc(
+  index = index,
+  count_file = "data/lr_counts.csv",
+  clusters_file = "analysis/clusters.csv",
+  output_dir = "results/"
+)
+
+#===============================================================================
+# STAGE 4: Quantify All Clusters
+#===============================================================================
+
+results <- mpaqt_quant_sc(
+  index = index,
+  sr_counts_list = sr_list,
+  lr_counts_list = lr_list,
+  positional_bias = "3p",
+  verbose = TRUE
+)
+
+#===============================================================================
+# STAGE 5: Extract and Save Results
+#===============================================================================
+
+# Save everything
+mpaqt_save_result_sc(results, "results/", prefix = "sample")
+
+# Get combined TPM matrix for downstream analysis
+tpm_matrix <- combine_quant_results(results)
+
+# Export for use in Seurat/scanpy
+data.table::fwrite(tpm_matrix, "results/transcript_tpm_by_cluster.csv")
+```

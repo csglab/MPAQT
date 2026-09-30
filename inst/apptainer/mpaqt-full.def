@@ -1,0 +1,82 @@
+Bootstrap: docker
+From: continuumio/miniconda3:latest
+
+%labels
+    Author Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi
+    Version 2.0.0
+    Variant full
+    Description MPAQT Full - with all optional dependencies (minimap2, samtools, Bioconductor packages)
+    org.opencontainers.image.source https://github.com/csglab/mpaqt2
+
+%files
+    environment.yml /opt/environment.yml
+    mpaqt-source /opt/mpaqt-source
+
+%environment
+    export PATH=/opt/conda/envs/mpaqt-full/bin:$PATH
+    export LC_ALL=C
+    export CONDA_DEFAULT_ENV=mpaqt-full
+
+%post
+    # Install mamba for faster dependency resolution
+    /opt/conda/bin/conda install -n base -c conda-forge mamba -y
+
+    # Create environment from yml file
+    /opt/conda/bin/mamba env create -f /opt/environment.yml
+
+    # Install mpaqt R package
+    /opt/conda/envs/mpaqt-full/bin/R CMD INSTALL /opt/mpaqt-source
+
+    # Copy CLI script to bin and make executable
+    cp /opt/mpaqt-source/inst/bin/mpaqt /opt/conda/envs/mpaqt-full/bin/mpaqt
+    chmod +x /opt/conda/envs/mpaqt-full/bin/mpaqt
+
+    # Clean up to reduce image size
+    /opt/conda/bin/conda clean --all -y
+    rm -rf /opt/conda/pkgs/*
+    rm -rf /root/.cache/*
+    rm -rf /opt/mpaqt-source
+    rm -f /opt/environment.yml
+
+    # Create working directory
+    mkdir -p /data
+
+%runscript
+    exec "$@"
+
+%test
+    echo "Testing MPAQT Full container..."
+    R --version | head -1
+    kallisto version
+    bustools version
+    minimap2 --version
+    samtools --version | head -1
+    R --slave -e 'library(mpaqt); cat("MPAQT version:", as.character(packageVersion("mpaqt")), "\n")'
+    R --slave -e 'library(bambu); cat("bambu available\n")'
+    mpaqt --help | head -5
+    echo "All tests passed!"
+
+%help
+    MPAQT Full - Multi-Platform Accurate Quantification of Transcripts
+
+    This image includes all optional dependencies:
+      - minimap2, samtools (for long-read alignment)
+      - bambu, BiocFileCache, SummarizedExperiment (for FLNC processing)
+      - Biostrings, rtracklayer, GenomicRanges (for transcriptome extraction)
+
+    Usage:
+      apptainer run mpaqt-full.sif R
+      apptainer run mpaqt-full.sif mpaqt --help
+      apptainer run mpaqt-full.sif mpaqt index ...
+      apptainer exec mpaqt-full.sif Rscript your_script.R
+
+    CLI Commands:
+      mpaqt index      - Create index from transcriptome/annotation
+      mpaqt prepare-sr - Prepare short-read data
+      mpaqt prepare-lr - Prepare long-read data
+      mpaqt quant      - Run quantification (bulk)
+      mpaqt quant-sc   - Run quantification (single-cell)
+      mpaqt run        - Full pipeline
+
+    Authors: Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi
+    Documentation: https://csglab.github.io/mpaqt2/

@@ -1,0 +1,45 @@
+# Stage 1: Build environment with conda and install mpaqt (DEV variant)
+FROM continuumio/miniconda3:latest AS builder
+
+WORKDIR /build
+
+# Copy environment file and package source
+COPY environment.yml /build/environment.yml
+COPY mpaqt-source /build/mpaqt-source
+
+# Install mamba, create environment, and install mpaqt package
+RUN conda install -n base -c conda-forge mamba -y && \
+    mamba env create -f environment.yml && \
+    # Install mpaqt R package
+    /opt/conda/envs/mpaqt-dev/bin/R CMD INSTALL /build/mpaqt-source && \
+    # Copy CLI script to environment bin
+    cp /build/mpaqt-source/inst/bin/mpaqt /opt/conda/envs/mpaqt-dev/bin/mpaqt && \
+    chmod +x /opt/conda/envs/mpaqt-dev/bin/mpaqt && \
+    # Pack the environment
+    conda install -c conda-forge conda-pack -y && \
+    conda-pack -n mpaqt-dev -o /tmp/env.tar.gz && \
+    mkdir /venv && cd /venv && tar xf /tmp/env.tar.gz && \
+    rm /tmp/env.tar.gz && \
+    /venv/bin/conda-unpack
+
+# Stage 2: Minimal runtime image
+FROM debian:bookworm-slim
+
+LABEL maintainer="Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi"
+LABEL version="2.0.0"
+LABEL variant="dev"
+LABEL description="MPAQT Dev - with development, testing, and profiling tools"
+LABEL org.opencontainers.image.source="https://github.com/csglab/mpaqt2"
+
+# Copy the packed environment from builder
+COPY --from=builder /venv /venv
+
+# Set environment variables
+ENV PATH="/venv/bin:$PATH"
+ENV LC_ALL=C
+
+# Create working directory
+WORKDIR /data
+
+# Default command
+CMD ["/bin/bash"]

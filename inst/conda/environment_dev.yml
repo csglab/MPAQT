@@ -1,0 +1,63 @@
+# Conda environment for MPAQT development
+# Usage: conda env create -f environment_dev.yml
+# Activate: conda activate mpaqt-dev
+#
+# Includes all production dependencies plus development tools
+
+name: mpaqt-dev
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # R base
+  - r-base>=4.0.0
+
+  # MPAQT core dependencies (from DESCRIPTION Imports)
+  - r-data.table>=1.14.0
+  - r-matrix
+  - r-lme4
+  - r-cli>=3.0.0
+  - r-rlang>=1.0.0
+  - r-stringr
+  - r-purrr
+
+  # GPBoost (may need special handling)
+  - r-gpboost
+
+  # CLI argument parsing
+  - r-optparse
+
+  # External bioinformatics tools (required)
+  - kallisto>=0.50.1
+  - bustools>=0.43.1
+
+  # ===========================================
+  # Development tools (not needed for production)
+  # ===========================================
+
+  # Package development
+  - r-devtools
+  - r-roxygen2
+  - r-usethis
+
+  # Testing
+  - r-testthat>=3.0.0
+
+  # Documentation
+  - r-knitr
+  - r-rmarkdown
+  - r-pkgdown
+
+  # PDF compression (for R CMD check)
+  - qpdf
+
+  # Code quality
+  - r-lintr
+  - r-styler
+
+  # Build and release tools
+  - conda-forge::apptainer
+  - conda-forge::anaconda-client
+  - conda-forge::conda-build

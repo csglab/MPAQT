@@ -1,0 +1,35 @@
+Package: mpaqt
+Title: Multi-Platform Accurate Quantification of Transcripts
+Version: 2.0.0
+Authors@R: c(
+    person("Ali", "Saberi", , "saberiato@gmail.com", role = c("aut", "cre")),
+    person("Michael", "Apostolides", role = "aut"),
+    person("Jichen", "Wang", role = "aut"),
+    person("Hamed S.", "Najafabadi", role = "aut")
+    )
+Description: MPAQT is a generative framework that integrates short- and long-read
+    RNA-seq to overcome each platform's limitations by combining positional-bias
+    modeling with prior integration to enable state-of-the-art isoform-resolved
+    transcript quantification.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+URL: https://github.com/csglab/mpaqt2,
+        https://csglab.github.io/mpaqt2/
+BugReports: https://github.com/csglab/mpaqt2/issues
+Depends: R (>= 4.0.0)
+Imports: data.table (>= 1.14.0), Matrix, lme4, gpboost, cli (>= 3.0.0),
+        rlang (>= 1.0.0), stringr, purrr, methods, stats, utils
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown, optparse, Biostrings,
+        rtracklayer, GenomicRanges, IRanges, BSgenome, bambu,
+        BiocFileCache, SummarizedExperiment, docopt
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+SystemRequirements: kallisto (>= 0.50.1), bustools (>= 0.43.1),
+        minimap2 (optional, for long-read alignment), samtools
+        (optional, for BAM processing)
+NeedsCompilation: no
+Packaged: 2025-12-09 22:45:40 UTC; saberi
+Author: Ali Saberi [aut, cre]
+Maintainer: Ali Saberi <saberiato@gmail.com>

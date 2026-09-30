@@ -1,0 +1,54 @@
+# Conda environment for MPAQT (full version with all optional dependencies)
+# Usage: conda env create -f environment_full.yml
+# Activate: conda activate mpaqt-full
+#
+# This includes all optional tools and packages for:
+# - Long-read FLNC processing (minimap2, samtools, bambu)
+# - Transcriptome extraction from genome (Biostrings, rtracklayer, etc.)
+#
+# For development tools, see environment_dev.yml
+
+name: mpaqt-full
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # R base
+  - r-base>=4.0.0
+
+  # MPAQT core dependencies (from DESCRIPTION Imports)
+  - r-data.table>=1.14.0
+  - r-matrix
+  - r-lme4
+  - r-cli>=3.0.0
+  - r-rlang>=1.0.0
+  - r-stringr
+  - r-purrr
+
+  # GPBoost (may need special handling)
+  - r-gpboost
+
+  # CLI argument parsing
+  - r-optparse
+
+  # External bioinformatics tools (required)
+  - kallisto>=0.50.1
+  - bustools>=0.43.1
+
+  # External bioinformatics tools (optional - for long-read processing)
+  - minimap2
+  - samtools
+
+  # Bioconductor packages (optional - for long-read FLNC processing)
+  - bioconductor-bambu
+  - bioconductor-biocfilecache
+  - bioconductor-summarizedexperiment
+
+  # Bioconductor packages (optional - for transcriptome extraction)
+  - bioconductor-biostrings
+  - bioconductor-rtracklayer
+  - bioconductor-genomicranges
+  - bioconductor-iranges
+  - bioconductor-bsgenome
