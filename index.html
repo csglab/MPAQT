@@ -18,7 +18,7 @@
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="MPAQT - Multi-Platform Accurate Quantification of Transcripts">
 <meta property="og:description" content="MPAQT is a generative framework that integrates short- and long-read RNA-seq to overcome each platform's limitations by combining positional-bias modeling with prior integration to enable state-of-the-art isoform-resolved transcript quantification.">
-<meta property="og:image" content="https://csglab.github.io/mpaqt2/logo.png">
+<meta property="og:image" content="https://csglab.github.io/MPAQT/logo.png">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -81,7 +81,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/csglab/MPAQT_merged/" class="external-link">
+  <a href="https://github.com/csglab/MPAQT/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
 
   </a>
@@ -104,7 +104,7 @@
 
 <p><strong>M</strong>ulti-<strong>P</strong>latform <strong>A</strong>ccurate <strong>Q</strong>uantification of <strong>T</strong>ranscripts</p>
 <p>MPAQT is an R package for RNA-seq transcript quantification that integrates short-read and long-read sequencing data for improved accuracy. It supports both bulk and single-cell RNA-seq analysis.</p>
-<p><strong>Documentation</strong>: <a href="https://csglab.github.io/mpaqt2/">csglab.github.io/mpaqt2</a></p>
+<p><strong>Documentation</strong>: <a href="https://csglab.github.io/MPAQT/">csglab.github.io/MPAQT</a></p>
 <hr>
 <div class="section level2">
 <h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
@@ -175,8 +175,8 @@
 </h4>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pak"</span><span class="op">)</span></span>
-<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"csglab/MPAQT_merged"</span><span class="op">)</span></span></code></pre></div>
-<p>The source repository is currently private. This installation method requires repository access and GitHub credentials configured for <code>pak</code>.</p>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"csglab/MPAQT"</span><span class="op">)</span></span></code></pre></div>
+<p>The source repository is public. GitHub credentials are optional for installation and can help avoid API rate limits.</p>
 </div>
 <div class="section level4">
 <h4 id="step-3-install-system-tools">Step 3: Install System Tools<a class="anchor" aria-label="anchor" href="#step-3-install-system-tools"></a>
@@ -223,7 +223,7 @@
 <h3 id="r-api">R API<a class="anchor" aria-label="anchor" href="#r-api"></a>
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/csglab/MPAQT_merged" class="external-link">mpaqt</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/csglab/MPAQT" class="external-link">mpaqt</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1. Create index (run once)</span></span>
 <span><span class="va">index</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/mpaqt_index.html">mpaqt_index</a></span><span class="op">(</span></span>
@@ -255,7 +255,7 @@
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
-<p>Full documentation: <strong><a href="https://csglab.github.io/mpaqt2/" class="uri">https://csglab.github.io/mpaqt2/</a></strong></p>
+<p>Full documentation: <strong><a href="https://csglab.github.io/MPAQT/" class="uri">https://csglab.github.io/MPAQT/</a></strong></p>
 <table class="table">
 <colgroup>
 <col width="35%">
@@ -267,19 +267,19 @@
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><a href="https://csglab.github.io/mpaqt2/articles/installation.html">Installation</a></td>
+<td><a href="https://csglab.github.io/MPAQT/articles/installation.html">Installation</a></td>
 <td>Detailed installation guide</td>
 </tr>
 <tr class="even">
-<td><a href="https://csglab.github.io/mpaqt2/articles/bulk-workflow.html">Bulk Workflow</a></td>
+<td><a href="https://csglab.github.io/MPAQT/articles/bulk-workflow.html">Bulk Workflow</a></td>
 <td>Complete bulk RNA-seq analysis</td>
 </tr>
 <tr class="odd">
-<td><a href="https://csglab.github.io/mpaqt2/articles/single-cell-workflow.html">Single-Cell</a></td>
+<td><a href="https://csglab.github.io/MPAQT/articles/single-cell-workflow.html">Single-Cell</a></td>
 <td>Cluster-level quantification</td>
 </tr>
 <tr class="even">
-<td><a href="https://csglab.github.io/mpaqt2/reference/index.html">API Reference</a></td>
+<td><a href="https://csglab.github.io/MPAQT/reference/index.html">API Reference</a></td>
 <td>All functions</td>
 </tr>
 </tbody>
@@ -298,8 +298,8 @@
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
 </h2>
-<p>We welcome contributions! See our <a href="https://csglab.github.io/mpaqt2/articles/package-structure.html">Package Structure</a> guide.</p>
-<p>Repository members can report issues at: <a href="https://github.com/csglab/MPAQT_merged/issues" class="external-link uri">https://github.com/csglab/MPAQT_merged/issues</a>. If you do not have repository access, contact the package maintainer listed in <code>DESCRIPTION</code>.</p>
+<p>We welcome contributions! See our <a href="https://csglab.github.io/MPAQT/articles/package-structure.html">Package Structure</a> guide.</p>
+<p>Report issues at <a href="https://github.com/csglab/MPAQT/issues">github.com/csglab/MPAQT/issues</a>.</p>
 <hr>
 </div>
 <div class="section level2">
@@ -314,8 +314,8 @@
     <div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/csglab/MPAQT_merged/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/csglab/MPAQT_merged/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/csglab/MPAQT/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/csglab/MPAQT/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
