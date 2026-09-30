@@ -65,7 +65,7 @@ about:
   license: MIT
   license_family: MIT
   license_file: LICENSE
-  summary: Multi-Platform Accurate Quantification of Transcripts (Full)
+  summary: Multi-Platform Aggregation and Quantification of Transcripts (Full)
   description: |
     MPAQT is an R package for RNA-seq transcript quantification that
     integrates short-read and long-read sequencing data for improved accuracy.

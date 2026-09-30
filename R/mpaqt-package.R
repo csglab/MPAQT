@@ -1,7 +1,7 @@
 #' @keywords internal
 "_PACKAGE"
 
-#' MPAQT: Multi-Platform Accurate Quantification of Transcripts
+#' MPAQT: Multi-Platform Aggregation and Quantification of Transcripts
 #'
 #' RNA-seq quantification pipeline integrating short-read and long-read
 #' sequencing data for improved transcript abundance estimation. Supports

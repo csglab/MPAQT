@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # MPAQT CLI - Command Line Interface for MPAQT package
-# Multi-Platform Accurate Quantification of Transcripts
+# Multi-Platform Aggregation and Quantification of Transcripts
 
 # ==============================================================================
 # Load dependencies
@@ -30,7 +30,7 @@ suppressPackageStartupMessages({
 # ==============================================================================
 
 main_help <- "
-MPAQT: Multi-Platform Accurate Quantification of Transcripts
+MPAQT: Multi-Platform Aggregation and Quantification of Transcripts
 
 Usage:
   mpaqt <command> [options]

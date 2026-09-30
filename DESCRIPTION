@@ -1,5 +1,5 @@
 Package: mpaqt
-Title: Multi-Platform Accurate Quantification of Transcripts
+Title: Multi-Platform Aggregation and Quantification of Transcripts
 Version: 2.4.0
 Authors@R: c(
     person("Ali", "Saberi", , "saberiato@gmail.com", role = c("aut", "cre")),

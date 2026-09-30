@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-MPAQT (Multi-Platform Accurate Quantification of Transcripts) integrates short-read and long-read RNA-seq data to improve transcript abundance estimation. This vignette provides a comprehensive mathematical description of the quantification algorithm.
+MPAQT (Multi-Platform Aggregation and Quantification of Transcripts) integrates short-read and long-read RNA-seq data to improve transcript abundance estimation. This vignette provides a comprehensive mathematical description of the quantification algorithm.
 
 ### The Core Optimization Problem
 

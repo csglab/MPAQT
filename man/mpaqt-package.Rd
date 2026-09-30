@@ -4,7 +4,7 @@
 \name{mpaqt-package}
 \alias{mpaqt-package}
 \alias{mpaqt}
-\title{mpaqt: Multi-Platform Accurate Quantification of Transcripts}
+\title{mpaqt: Multi-Platform Aggregation and Quantification of Transcripts}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 

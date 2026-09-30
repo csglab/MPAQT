@@ -4,7 +4,7 @@ template:
   bootstrap: 3
 
 home:
-  title: MPAQT - Multi-Platform Accurate Quantification of Transcripts
+  title: MPAQT - Multi-Platform Aggregation and Quantification of Transcripts
   strip_header: true
 
 navbar:
