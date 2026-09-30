@@ -473,7 +473,7 @@ internal_helper <- function(...) {
 
 ### Reporting Issues
 
-Report issues at: https://github.com/csglab/mpaqt2/issues
+Report issues at: https://github.com/csglab/MPAQT_merged/issues
 
 Include:
 - MPAQT version: `packageVersion("mpaqt")`

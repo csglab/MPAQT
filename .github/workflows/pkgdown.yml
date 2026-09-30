@@ -1,12 +1,12 @@
 name: pkgdown
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 
 jobs:
   pkgdown:
+    # Private staging: publishing stays disabled until a separate approved cutover.
+    if: github.repository == 'csglab/MPAQT'
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -1,3 +1,5 @@
+> **Private migration review:** `csglab/MPAQT_merged`. See [migration notes](MIGRATION.md) for version branches, historical tags, excluded data, and publication status.
+
 # MPAQT <img src="man/figures/logo.png" align="right" height="139" alt="MPAQT logo" />
 
 <!-- badges: start -->
@@ -47,7 +49,7 @@ Install R (>= 4.0.0) from [CRAN](https://cran.r-project.org/) with compilation t
 
 ```r
 install.packages("pak")
-pak::pak("csglab/mpaqt2")
+pak::pak("csglab/MPAQT_merged")
 ```
 
 #### Step 3: Add CLI to PATH
@@ -216,7 +218,7 @@ If you use MPAQT in your research, please cite:
 
 We welcome contributions! See our [Package Structure](https://csglab.github.io/mpaqt2/articles/package-structure.html) guide.
 
-Report issues at: https://github.com/csglab/mpaqt2/issues
+Report issues at: https://github.com/csglab/MPAQT_merged/issues
 
 ---
 
