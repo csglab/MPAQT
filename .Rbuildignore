@@ -31,3 +31,7 @@
 ^inst/docker$
 ^inst/apptainer$
 ^inst/conda-recipe$
+
+# Migration metadata
+^MIGRATION\.md$
+^migration-manifest\.json$

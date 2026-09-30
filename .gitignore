@@ -60,3 +60,19 @@ debug/
 .lintr.R
 CLAUDE.md
 AGENTS.md
+
+# Credentials, runtime output, and large build products
+.env
+.env.*
+!.env.example
+release-credentials.yml
+release_cred.yml
+*.log
+*.sif
+*.bam
+*.cram
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+.DS_Store

@@ -6,7 +6,7 @@ From: continuumio/miniconda3:latest
     Version 2.4.0
     Variant full
     Description MPAQT Full - with all optional dependencies (minimap2, samtools, Bioconductor packages)
-    org.opencontainers.image.source https://github.com/csglab/mpaqt2
+    org.opencontainers.image.source https://github.com/csglab/MPAQT_merged
 
 %files
     environment.yml /opt/environment.yml
