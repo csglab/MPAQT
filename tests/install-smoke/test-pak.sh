@@ -9,10 +9,6 @@ ENV_NAME="mpaqt2-local"
 require_command conda
 require_command rg
 
-if [[ -z "${GITHUB_PAT:-}" ]]; then
-    fail "GITHUB_PAT must be exported so pak can access the private csglab/MPAQT_merged repository"
-fi
-
 case_dir="$(reset_case_dir pak)"
 exec > >(tee "$case_dir/test.log") 2>&1
 
@@ -43,13 +39,13 @@ conda create -n "$ENV_NAME" -y \
 
 log "Installing MPAQT from GitHub with pak"
 conda run --no-capture-output -n "$ENV_NAME" \
-    Rscript -e 'pak::pak("csglab/MPAQT_merged")'
+    Rscript -e 'pak::pak("csglab/MPAQT")'
 
 conda run --no-capture-output -n "$ENV_NAME" Rscript -e '
     description <- utils::packageDescription("mpaqt")
     stopifnot(as.character(utils::packageVersion("mpaqt")) == "2.4.0")
     stopifnot(identical(description[["RemoteUsername"]], "csglab"))
-    stopifnot(identical(description[["RemoteRepo"]], "mpaqt2"))
+    stopifnot(identical(description[["RemoteRepo"]], "MPAQT"))
     stopifnot(nzchar(description[["RemoteSha"]]))
     cat("Installed GitHub commit:", description[["RemoteSha"]], "\n")
 '
@@ -61,7 +57,7 @@ conda run --no-capture-output -n "$ENV_NAME" \
     "$case_dir/toy.gtf" \
     "$case_dir/toy.fa" \
     "$case_dir/index-output" \
-    "pak:csglab/MPAQT_merged"
+    "pak:csglab/MPAQT"
 
 [[ -s "$case_dir/index-output/PASS.txt" ]] ||
     fail "pak index smoke test did not create PASS.txt"

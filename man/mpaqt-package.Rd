@@ -56,9 +56,9 @@ MPAQT requires the following external tools:
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/csglab/MPAQT_merged}
-  \item \url{https://csglab.github.io/mpaqt2/}
-  \item Report bugs at \url{https://github.com/csglab/MPAQT_merged/issues}
+  \item \url{https://github.com/csglab/MPAQT}
+  \item \url{https://csglab.github.io/MPAQT/}
+  \item Report bugs at \url{https://github.com/csglab/MPAQT/issues}
 }
 
 }

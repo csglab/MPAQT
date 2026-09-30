@@ -37,7 +37,7 @@ rg -q -- '-c defaults' "$SCRIPT_DIR/test-pak.sh" ||
     fail "pak dependency environment does not explicitly enable defaults for r-gpboost"
 rg -q 'library://csglab/mpaqt/mpaqt:2\.4\.0' "$SCRIPT_DIR/test-apptainer.sh" ||
     fail "Apptainer test is not pinned to the stable v2.4.0 image"
-rg -Fq 'pak::pak("csglab/MPAQT_merged")' "$SCRIPT_DIR/test-pak.sh" ||
+rg -Fq 'pak::pak("csglab/MPAQT")' "$SCRIPT_DIR/test-pak.sh" ||
     fail "pak test does not use the required installation command"
 rg -q 'mpaqt_index\(' "$SCRIPT_DIR/run-index-smoke.R" ||
     fail "shared smoke test does not call mpaqt_index()"
@@ -46,3 +46,6 @@ rg -q 'packageVersion\("mpaqt"\).*2\.4\.0|2\.4\.0.*packageVersion\("mpaqt"\)' \
     fail "shared smoke test does not verify MPAQT 2.4.0"
 
 echo "Installation smoke harness checks passed."
+
+# A renamed repository must also update the installed-package identity check.
+rg -Fq 'description[["RemoteRepo"]], "MPAQT"' "$SCRIPT_DIR/test-pak.sh" || fail "pak test expects the wrong GitHub repository"

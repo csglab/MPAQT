@@ -1,6 +1,6 @@
 {
-  "target": "csglab/MPAQT_merged",
-  "visibility": "private",
+  "target": "csglab/MPAQT",
+  "visibility": "public",
   "created_utc": "2026-09-30T14:10:05.130993+00:00",
   "snapshots": [
     {
@@ -565,5 +565,6 @@
       ]
     }
   ],
-  "manifest_scope": "Exact cleaned source imports. Branch tips additionally contain private-staging configuration commits."
+  "manifest_scope": "Exact cleaned source imports. Branch tips additionally contain private-staging configuration commits.",
+  "legacy_repository": "csglab/MPAQT_legacy"
 }

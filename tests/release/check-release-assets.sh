@@ -100,7 +100,7 @@ for recipe in \
     inst/conda-recipe/meta-full.yaml \
     inst/conda-recipe/meta-dev.yaml
 do
-    rg -q '^  git_url: https://github\.com/csglab/MPAQT_merged\.git$' "$recipe" ||
+    rg -q '^  git_url: https://github\.com/csglab/MPAQT\.git$' "$recipe" ||
         fail "$recipe does not use the csglab repository"
     rg -q "^  git_rev: v${VERSION//./\\.}$" "$recipe" ||
         fail "$recipe is not pinned to v${VERSION}"

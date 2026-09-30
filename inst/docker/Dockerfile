@@ -29,7 +29,7 @@ LABEL maintainer="Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafab
 LABEL version="2.4.0"
 LABEL variant="stable"
 LABEL description="MPAQT - Multi-Platform Accurate Quantification of Transcripts"
-LABEL org.opencontainers.image.source="https://github.com/csglab/MPAQT_merged"
+LABEL org.opencontainers.image.source="https://github.com/csglab/MPAQT"
 
 # Copy the packed environment from builder
 COPY --from=builder /venv /venv

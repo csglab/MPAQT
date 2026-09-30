@@ -265,6 +265,4 @@ tests in the same change.
 4. Run `devtools::test()` and `devtools::check()`.
 5. Regenerate roxygen and pkgdown output when public documentation changes.
 
-Repository members can report issues at
-<https://github.com/csglab/MPAQT_merged/issues>. Users without repository access
-should contact the package maintainer listed in `DESCRIPTION`.
+Report issues at <https://github.com/csglab/MPAQT/issues>.
