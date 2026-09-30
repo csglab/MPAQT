@@ -57,7 +57,7 @@ From: continuumio/miniconda3:latest
     echo "All tests passed!"
 
 %help
-    MPAQT Full - Multi-Platform Accurate Quantification of Transcripts
+    MPAQT Full - Multi-Platform Aggregation and Quantification of Transcripts
 
     This image includes all optional dependencies:
       - minimap2, samtools (for long-read alignment)

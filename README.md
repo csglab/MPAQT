@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
-**M**ulti-**P**latform **A**ccurate **Q**uantification of **T**ranscripts
+**M**ulti-**P**latform **A**ggregation and **Q**uantification of **T**ranscripts
 
 MPAQT is an R package for RNA-seq transcript quantification that integrates short-read and long-read sequencing data for improved accuracy. It supports both bulk and single-cell RNA-seq analysis.
 

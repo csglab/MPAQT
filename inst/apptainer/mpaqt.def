@@ -5,7 +5,7 @@ From: continuumio/miniconda3:latest
     Author Ali Saberi, Michael Apostolides, Jichen Wang, Hamed S. Najafabadi
     Version 2.4.0
     Variant stable
-    Description MPAQT - Multi-Platform Accurate Quantification of Transcripts
+    Description MPAQT - Multi-Platform Aggregation and Quantification of Transcripts
     org.opencontainers.image.source https://github.com/csglab/MPAQT
 
 %files
@@ -54,7 +54,7 @@ From: continuumio/miniconda3:latest
     echo "All tests passed!"
 
 %help
-    MPAQT - Multi-Platform Accurate Quantification of Transcripts
+    MPAQT - Multi-Platform Aggregation and Quantification of Transcripts
 
     Usage:
       apptainer run mpaqt.sif R

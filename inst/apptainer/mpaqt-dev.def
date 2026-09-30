@@ -56,7 +56,7 @@ From: continuumio/miniconda3:latest
     echo "All tests passed!"
 
 %help
-    MPAQT Dev - Multi-Platform Accurate Quantification of Transcripts
+    MPAQT Dev - Multi-Platform Aggregation and Quantification of Transcripts
 
     This image includes development tools:
       - devtools, roxygen2, usethis (package development)
