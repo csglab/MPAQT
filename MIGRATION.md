@@ -42,10 +42,10 @@ The website is https://csglab.github.io/MPAQT/ and the current GitHub installati
 pak::pak("csglab/MPAQT")
 ```
 
-README files intentionally remain identical to their original source versions,
-including historical URLs and private-repository notices. Current installation
-instructions are on the website. The documentation publishing workflow normalizes
-generated website links and notices without modifying the preserved README files.
+README links and access instructions now point to the public MPAQT repository
+and documentation site. Historical release tags retain their original contents.
+The documentation publishing workflow also normalizes generated website links
+and notices to keep public installation instructions consistent.
 The pkgdown workflow rebuilds `gh-pages`; Publish documentation deploys that branch.
 
 ## Verification and provenance
