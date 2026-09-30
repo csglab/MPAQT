@@ -360,8 +360,7 @@ BiocManager::install()
 pak::pak("csglab/MPAQT")
 ```
 
-This source-installation command requires access to the private source
-repository and GitHub credentials configured for `pak`.
+This source-installation command uses the public GitHub repository.
 
 ### gpboost Installation Issues
 
@@ -405,8 +404,7 @@ install.packages("pak")
 pak::pak("csglab/MPAQT")
 ```
 
-This source-installation command requires access to the private source
-repository and GitHub credentials configured for `pak`.
+This source-installation command uses the public GitHub repository.
 
 Install [kallisto](https://github.com/pachterlab/kallisto) (>= 0.50.1) and [bustools](https://github.com/BUStools/bustools) (>= 0.43.1).
 
@@ -418,8 +416,7 @@ pak::pak("csglab/MPAQT")
 BiocManager::install(c("Biostrings", "rtracklayer", "bambu", "BSgenome"))
 ```
 
-This source-installation command requires access to the private source
-repository and GitHub credentials configured for `pak`.
+This source-installation command uses the public GitHub repository.
 
 Also install [minimap2](https://github.com/lh3/minimap2) and [samtools](https://github.com/samtools/samtools).
 
