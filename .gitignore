@@ -1,9 +1,23 @@
-references/*
-!references/gencode.v46.index.mpaqt
-projects/
-data/*
-!data/fastq
-data/lr/*
-!data/lr/
-!data/lr/counts_transcript.txt
-tmp/
+# Archived source only; obtain reference data separately.
+/data/
+/RUNS/
+/reference/
+/references/
+/projects/
+/tmp/
+
+# Credentials, runtime output, and large build products
+.env
+.env.*
+!.env.example
+release-credentials.yml
+release_cred.yml
+*.log
+*.sif
+*.bam
+*.cram
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+.DS_Store

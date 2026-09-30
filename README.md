@@ -1,3 +1,5 @@
+> **Private migration review:** `csglab/MPAQT_merged`. See [migration notes](MIGRATION.md) for version branches, historical tags, excluded data, and publication status.
+
 # MPAQT
 > Multi-Platform Analysis and Quantification of Transcripts
 > —— v0.3.0
