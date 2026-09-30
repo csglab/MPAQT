@@ -21,7 +21,7 @@ correspond to package version 2.4.0.
 ## Repository Layout
 
 ```text
-mpaqt2/
+MPAQT/
 ├── R/                         # Package source
 ├── tests/testthat/            # Unit and integration tests
 ├── vignettes/                 # Source articles

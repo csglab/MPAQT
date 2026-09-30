@@ -9,7 +9,7 @@
 
 MPAQT is an R package for RNA-seq transcript quantification that integrates short-read and long-read sequencing data for improved accuracy. It supports both bulk and single-cell RNA-seq analysis.
 
-**Documentation**: [csglab.github.io/mpaqt2](https://csglab.github.io/mpaqt2/)
+**Documentation**: [csglab.github.io/MPAQT](https://csglab.github.io/MPAQT/)
 
 ---
 
@@ -54,11 +54,11 @@ BiocManager::install(c("Biostrings", "rtracklayer"))
 
 ```r
 install.packages("pak")
-pak::pak("csglab/mpaqt2")
+pak::pak("csglab/MPAQT")
 ```
 
-The source repository is currently private. This installation method requires
-repository access and GitHub credentials configured for `pak`.
+The source repository is public. GitHub credentials are optional and can help
+avoid API rate limits.
 
 #### Step 3: Install System Tools
 
@@ -144,14 +144,14 @@ tpm_values <- tpm(result)
 
 ## Documentation
 
-Full documentation: **https://csglab.github.io/mpaqt2/**
+Full documentation: **https://csglab.github.io/MPAQT/**
 
 | Guide | Description |
 |-------|-------------|
-| [Installation](https://csglab.github.io/mpaqt2/articles/installation.html) | Detailed installation guide |
-| [Bulk Workflow](https://csglab.github.io/mpaqt2/articles/bulk-workflow.html) | Complete bulk RNA-seq analysis |
-| [Single-Cell](https://csglab.github.io/mpaqt2/articles/single-cell-workflow.html) | Cluster-level quantification |
-| [API Reference](https://csglab.github.io/mpaqt2/reference/index.html) | All functions |
+| [Installation](https://csglab.github.io/MPAQT/articles/installation.html) | Detailed installation guide |
+| [Bulk Workflow](https://csglab.github.io/MPAQT/articles/bulk-workflow.html) | Complete bulk RNA-seq analysis |
+| [Single-Cell](https://csglab.github.io/MPAQT/articles/single-cell-workflow.html) | Cluster-level quantification |
+| [API Reference](https://csglab.github.io/MPAQT/reference/index.html) | All functions |
 
 ---
 
@@ -165,11 +165,9 @@ If you use MPAQT in your research, please cite:
 
 ## Contributing
 
-We welcome contributions! See our [Package Structure](https://csglab.github.io/mpaqt2/articles/package-structure.html) guide.
+We welcome contributions! See our [Package Structure](https://csglab.github.io/MPAQT/articles/package-structure.html) guide.
 
-Repository members can report issues at:
-https://github.com/csglab/mpaqt2/issues. If you do not have repository access,
-contact the package maintainer listed in `DESCRIPTION`.
+Report issues at: https://github.com/csglab/MPAQT/issues.
 
 ---
 

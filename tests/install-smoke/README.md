@@ -5,7 +5,7 @@ published installation path:
 
 - corrected Conda package `r-mpaqt=2.4.0=r43_1`;
 - stable Apptainer image `library://csglab/mpaqt/mpaqt:2.4.0`;
-- GitHub installation with `pak::pak("csglab/mpaqt2")`.
+- GitHub installation with `pak::pak("csglab/MPAQT")`.
 
 The tests generate a four-transcript, two-gene FASTA/GTF reference. Each gene
 has two mostly shared isoform sequences with a small unique region, so the
@@ -28,7 +28,7 @@ unresolved because this work intentionally does not modify R source.
 Run all tests:
 
 ```bash
-export GITHUB_PAT=...
+# Optional: configure GITHUB_PAT to avoid GitHub API rate limits.
 tests/install-smoke/run-all.sh
 ```
 
