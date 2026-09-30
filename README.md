@@ -1,5 +1,3 @@
 # MPAQT
 
-See how to run MPAQT at https://github.com/csglab/MPAQT/wiki/Running-MPAQT 
-
-Dataset details at https://github.com/csglab/MPAQT/wiki/Datasets
+Legacy documentation links: [original repository wiki](https://github.com/csglab/MPAQT_legacy/wiki/).
