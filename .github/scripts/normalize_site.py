@@ -8,6 +8,7 @@ def normalize(content):
     content = content.replace('csglab/MPAQT_merged', 'csglab/MPAQT')
     content = content.replace('csglab/mpaqt2', 'csglab/MPAQT')
     content = content.replace('csglab.github.io/mpaqt2', 'csglab.github.io/MPAQT')
+    content = content.replace('"src": "/web-app-manifest-', '"src": "web-app-manifest-')
     # Historical READMEs are preserved, but their private-repository notices
     # must not appear in the public website generated from them.
     content = re.sub(r'<p>(?:The source repository is currently private\.|This method also requires access to the private source repository|This source-installation command requires access to the private)[\s\S]*?</p>',
