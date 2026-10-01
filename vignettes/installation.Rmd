@@ -242,16 +242,25 @@ apptainer remote add --no-login SylabsCloud cloud.sycloud.io
 apptainer remote use SylabsCloud
 ```
 
-Then pull the image:
+Use `--contain --cleanenv` when running MPAQT images to avoid interference
+from host environment variables and home-directory R libraries (for example,
+a host `Matrix` package that requires `libflexiblas.so.3`).
+
+With `--contain`, explicitly bind the folder containing your scripts and data.
+The examples below use `--bind "$PWD:/work" --pwd /work` to make the current
+folder available at `/work` inside the container and run there. Keep analysis
+inputs and outputs in that folder, or add `--bind` options for other data folders.
+
+Then pull and run the image:
 
 ```bash
 # Stable
 apptainer pull library://csglab/mpaqt/mpaqt:2.0.0
-apptainer exec mpaqt_2.0.0.sif Rscript analysis.R
+apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt_2.0.0.sif Rscript analysis.R
 
 # Full
 apptainer pull library://csglab/mpaqt/mpaqt:2.0.0-full
-apptainer exec mpaqt_2.0.0-full.sif Rscript analysis.R
+apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt_2.0.0-full.sif Rscript analysis.R
 
 # Development
 apptainer pull library://csglab/mpaqt/mpaqt:2.0.0-dev

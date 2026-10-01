@@ -65,10 +65,10 @@ From: continuumio/miniconda3:latest
       - Biostrings, rtracklayer, GenomicRanges (for transcriptome extraction)
 
     Usage:
-      apptainer run mpaqt-full.sif R
-      apptainer run mpaqt-full.sif mpaqt --help
-      apptainer run mpaqt-full.sif mpaqt index ...
-      apptainer exec mpaqt-full.sif Rscript your_script.R
+      apptainer run --contain --cleanenv mpaqt-full.sif R
+      apptainer run --contain --cleanenv mpaqt-full.sif mpaqt --help
+      apptainer run --contain --cleanenv mpaqt-full.sif mpaqt index ...
+      apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt-full.sif Rscript your_script.R
 
     CLI Commands:
       mpaqt index      - Create index from transcriptome/annotation
