@@ -236,7 +236,7 @@ First, configure the Sylabs Cloud remote (one-time setup):
 
 ```bash
 # Add the Sylabs Cloud remote
-apptainer remote add --no-login SylabsCloud cloud.sylabs.io
+apptainer remote add --no-login SylabsCloud cloud.sycloud.io
 
 # Set it as default
 apptainer remote use SylabsCloud
