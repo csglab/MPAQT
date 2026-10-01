@@ -66,10 +66,10 @@ From: continuumio/miniconda3:latest
       - qpdf (PDF compression)
 
     Usage:
-      apptainer run mpaqt-dev.sif R
-      apptainer run mpaqt-dev.sif mpaqt --help
-      apptainer exec mpaqt-dev.sif Rscript -e 'devtools::test()'
-      apptainer exec mpaqt-dev.sif Rscript -e 'devtools::check()'
+      apptainer run --contain --cleanenv mpaqt-dev.sif R
+      apptainer run --contain --cleanenv mpaqt-dev.sif mpaqt --help
+      apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt-dev.sif Rscript -e 'devtools::test()'
+      apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt-dev.sif Rscript -e 'devtools::check()'
 
     CLI Commands:
       mpaqt index      - Create index from transcriptome/annotation

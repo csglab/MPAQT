@@ -86,6 +86,12 @@ R -e 'library(mpaqt)'
 
 For HPC clusters without Docker access:
 
+Use `--contain --cleanenv` when running MPAQT images to avoid interference
+from host environment variables and home-directory R libraries (for example,
+a host `Matrix` package that requires `libflexiblas.so.3`).
+
+For scripts and data, see the [installation guide](https://csglab.github.io/MPAQT/articles/installation.html#apptainer-for-hpc) for folder binding examples.
+
 ```bash
 # Configure the Sylabs Cloud remote before pulling (one-time setup)
 apptainer remote add --no-login SylabsCloud cloud.sycloud.io
@@ -95,13 +101,13 @@ apptainer remote use SylabsCloud
 apptainer pull mpaqt_2.0.0.sif library://csglab/mpaqt/mpaqt:2.0.0
 
 # CLI usage
-apptainer exec mpaqt_2.0.0.sif mpaqt --help
+apptainer exec --contain --cleanenv mpaqt_2.0.0.sif mpaqt --help
 
 # R API usage
-apptainer exec mpaqt_2.0.0.sif R -e 'library(mpaqt)'
+apptainer exec --contain --cleanenv mpaqt_2.0.0.sif R -e 'library(mpaqt)'
 
 # Run interactively
-apptainer shell mpaqt_2.0.0.sif
+apptainer shell --contain --cleanenv mpaqt_2.0.0.sif
 ```
 
 ---

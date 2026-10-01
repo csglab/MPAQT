@@ -57,10 +57,10 @@ From: continuumio/miniconda3:latest
     MPAQT - Multi-Platform Aggregation and Quantification of Transcripts
 
     Usage:
-      apptainer run mpaqt.sif R
-      apptainer run mpaqt.sif mpaqt --help
-      apptainer run mpaqt.sif mpaqt index ...
-      apptainer exec mpaqt.sif Rscript your_script.R
+      apptainer run --contain --cleanenv mpaqt.sif R
+      apptainer run --contain --cleanenv mpaqt.sif mpaqt --help
+      apptainer run --contain --cleanenv mpaqt.sif mpaqt index ...
+      apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt.sif Rscript your_script.R
 
     CLI Commands:
       mpaqt index      - Create index from transcriptome/annotation
