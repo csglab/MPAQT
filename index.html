@@ -204,7 +204,11 @@
 <h3 id="apptainer">Apptainer<a class="anchor" aria-label="anchor" href="#apptainer"></a>
 </h3>
 <p>For HPC clusters:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Pull image</span></span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co"># Configure the Sylabs Cloud remote before pulling (one-time setup)</span>
+<span class="ex">apptainer</span> remote add <span class="at">--no-login</span> SylabsCloud cloud.sycloud.io
+<span class="ex">apptainer</span> remote use SylabsCloud
+
+<span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Pull image</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="ex">apptainer</span> pull mpaqt_2.4.0.sif <span class="dt">\</span></span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  library://csglab/mpaqt/mpaqt:2.4.0</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a></span>
