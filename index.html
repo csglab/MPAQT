@@ -204,6 +204,8 @@
 <h3 id="apptainer">Apptainer<a class="anchor" aria-label="anchor" href="#apptainer"></a>
 </h3>
 <p>For HPC clusters:</p>
+<p>Use <code>--contain --cleanenv</code> when running MPAQT images to avoid interference from host environment variables and home-directory R libraries (for example, a host <code>Matrix</code> package that requires <code>libflexiblas.so.3</code>).</p>
+<p>For scripts and data, see the <a href="articles/installation.html#apptainer-for-hpc">installation guide</a> for folder binding examples.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co"># Configure the Sylabs Cloud remote before pulling (one-time setup)</span>
 <span class="ex">apptainer</span> remote add <span class="at">--no-login</span> SylabsCloud cloud.sycloud.io
 <span class="ex">apptainer</span> remote use SylabsCloud
@@ -213,10 +215,10 @@
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  library://csglab/mpaqt/mpaqt:2.4.0</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a></span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co"># R API usage</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="ex">apptainer</span> exec mpaqt_2.4.0.sif R <span class="at">-e</span> <span class="st">'library(mpaqt)'</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="ex">apptainer</span> exec <span class="at">--contain --cleanenv</span> mpaqt_2.4.0.sif R <span class="at">-e</span> <span class="st">'library(mpaqt)'</span></span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co"># Run interactively</span></span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="ex">apptainer</span> shell mpaqt_2.4.0.sif</span></code></pre></div>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="ex">apptainer</span> shell <span class="at">--contain --cleanenv</span> mpaqt_2.4.0.sif</span></code></pre></div>
 <hr>
 </div>
 </div>
