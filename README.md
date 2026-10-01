@@ -87,8 +87,12 @@ R -e 'library(mpaqt)'
 For HPC clusters without Docker access:
 
 ```bash
+# Configure the Sylabs Cloud remote before pulling (one-time setup)
+apptainer remote add --no-login SylabsCloud cloud.sycloud.io
+apptainer remote use SylabsCloud
+
 # Pull image
-apptainer pull docker://csglab/mpaqt:2.0.0 
+apptainer pull mpaqt_2.0.0.sif library://csglab/mpaqt/mpaqt:2.0.0
 
 # CLI usage
 apptainer exec mpaqt_2.0.0.sif mpaqt --help

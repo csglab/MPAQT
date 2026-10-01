@@ -22,6 +22,8 @@ if ! command -v docker &> /dev/null; then
     echo "Docker is required to build and push Docker images."
     echo ""
     echo "Alternative: Use Apptainer images from Sylabs Cloud:"
+    echo "  apptainer remote add --no-login SylabsCloud cloud.sycloud.io"
+    echo "  apptainer remote use SylabsCloud"
     echo "  apptainer pull library://csglab/mpaqt/mpaqt:${VERSION}"
     exit 1
 fi
