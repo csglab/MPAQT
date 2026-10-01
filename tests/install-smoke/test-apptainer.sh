@@ -26,7 +26,7 @@ rg -qi 'Variant:[[:space:]]+stable|Variant[[:space:]]*=[[:space:]]*stable' \
 
 create_toy_reference "$case_dir"
 
-apptainer exec --cleanenv \
+apptainer exec --contain --cleanenv \
     --bind "$case_dir:/work" \
     --bind "$SCRIPT_DIR:/smoke:ro" \
     "$image_path" \

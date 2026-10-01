@@ -65,9 +65,9 @@ From: continuumio/miniconda3:latest
       - Biostrings, rtracklayer, GenomicRanges (for transcriptome extraction)
 
     Usage:
-      apptainer run mpaqt-full.sif R
-      apptainer exec mpaqt-full.sif Rscript your_script.R
-      apptainer exec mpaqt-full.sif Rscript -e 'library(mpaqt)'
+      apptainer run --contain --cleanenv mpaqt-full.sif R
+      apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt-full.sif Rscript your_script.R
+      apptainer exec --contain --cleanenv mpaqt-full.sif Rscript -e 'library(mpaqt)'
 
     This release exposes the supported R API. See the documentation for
     indexing, data preparation, and quantification examples.

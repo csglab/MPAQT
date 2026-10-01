@@ -66,9 +66,9 @@ From: continuumio/miniconda3:latest
       - qpdf (PDF compression)
 
     Usage:
-      apptainer run mpaqt-dev.sif R
-      apptainer exec mpaqt-dev.sif Rscript -e 'devtools::test()'
-      apptainer exec mpaqt-dev.sif Rscript -e 'devtools::check()'
+      apptainer run --contain --cleanenv mpaqt-dev.sif R
+      apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt-dev.sif Rscript -e 'devtools::test()'
+      apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt-dev.sif Rscript -e 'devtools::check()'
 
     This release exposes the supported R API. See the documentation for
     indexing, data preparation, and quantification examples.

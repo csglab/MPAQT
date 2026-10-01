@@ -57,9 +57,9 @@ From: continuumio/miniconda3:latest
     MPAQT - Multi-Platform Aggregation and Quantification of Transcripts
 
     Usage:
-      apptainer run mpaqt.sif R
-      apptainer exec mpaqt.sif Rscript your_script.R
-      apptainer exec mpaqt.sif Rscript -e 'library(mpaqt)'
+      apptainer run --contain --cleanenv mpaqt.sif R
+      apptainer exec --contain --cleanenv --bind "$PWD:/work" --pwd /work mpaqt.sif Rscript your_script.R
+      apptainer exec --contain --cleanenv mpaqt.sif Rscript -e 'library(mpaqt)'
 
     This release exposes the supported R API. See the documentation for
     indexing, data preparation, and quantification examples.
