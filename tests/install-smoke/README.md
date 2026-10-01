@@ -25,6 +25,14 @@ EC names. The paired-isoform reference used here represents the normal
 ambiguous-EC use case and passes, but the singleton-only case remains
 unresolved because this work intentionally does not modify R source.
 
+Before running the Apptainer test (including through `run-all.sh`), configure
+the Sylabs Cloud remote so the CSG Lab library image can be pulled:
+
+```bash
+apptainer remote add --no-login SylabsCloud cloud.sycloud.io
+apptainer remote use SylabsCloud
+```
+
 Run all tests:
 
 ```bash

@@ -94,6 +94,10 @@ The `defaults` channel supplies the `r-gpboost` dependency.
 For HPC clusters:
 
 ```bash
+# Configure the Sylabs Cloud remote before pulling (one-time setup)
+apptainer remote add --no-login SylabsCloud cloud.sycloud.io
+apptainer remote use SylabsCloud
+
 # Pull image
 apptainer pull mpaqt_2.4.0.sif \
   library://csglab/mpaqt/mpaqt:2.4.0
